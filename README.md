@@ -40,3 +40,7 @@ Run a real local loop after committing or stashing source changes:
 ```
 
 The loop only uses local Git state. It does not push, create remotes, create merge requests, or deploy.
+
+## Manual
+
+See `docs/usage.md` for the local Loop workflow, configuration, artifacts, statuses, and troubleshooting guide.
