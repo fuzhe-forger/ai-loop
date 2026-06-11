@@ -17,6 +17,7 @@ The MVP scope is intentionally narrow:
 This repository is bootstrapping itself. The implemented MVP slice supports:
 
 - `ai-loop init`
+- `ai-loop plan` for ambiguous tasks before implementation
 - `ai-loop run --dry-run`
 - `ai-loop run` with local `git worktree`
 - `codex exec` agent execution
@@ -30,6 +31,7 @@ This repository is bootstrapping itself. The implemented MVP slice supports:
 
 ```bash
 ./bin/ai-loop init
+./bin/ai-loop plan --repo . --task tasks/bootstrap-ai-loop.md --dry-run
 ./bin/ai-loop run --repo . --task tasks/bootstrap-ai-loop.md --dry-run
 ```
 
@@ -43,4 +45,4 @@ The loop only uses local Git state. It does not push, create remotes, create mer
 
 ## Manual
 
-See `docs/usage.md` for the local Loop workflow, configuration, artifacts, statuses, and troubleshooting guide.
+See `docs/usage.md` for the local Loop planning stage, execution workflow, configuration, artifacts, statuses, and troubleshooting guide.
