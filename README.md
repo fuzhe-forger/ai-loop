@@ -46,3 +46,5 @@ The loop only uses local Git state. It does not push, create remotes, create mer
 ## Manual
 
 See `docs/usage.md` for the local Loop planning stage, execution workflow, configuration, artifacts, statuses, and troubleshooting guide.
+
+For chat-driven tasks, start with `docs/in-window-loop.md` before invoking the local CLI or external tools.
