@@ -15,8 +15,6 @@ agent:
     - exec
     - -s
     - workspace-write
-    - -a
-    - never
   timeout_sec: 1800
   max_iterations: 3
 
@@ -107,4 +105,3 @@ runs/<run-id>/
   summary.md
 ```
 """
-

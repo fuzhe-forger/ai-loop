@@ -36,10 +36,16 @@ def load_config(repo: Path) -> dict[str, Any]:
     commands = verify.get("commands") or []
     if not isinstance(commands, list):
         raise ConfigError("verify.commands must be a list")
+    for index, command in enumerate(commands, start=1):
+        if not isinstance(command, dict):
+            raise ConfigError(f"verify.commands[{index}] must be a mapping")
+        if not isinstance(command.get("command"), str) or not command.get("command", "").strip():
+            raise ConfigError(f"verify.commands[{index}].command must be a non-empty string")
+        if "name" in command and not isinstance(command.get("name"), str):
+            raise ConfigError(f"verify.commands[{index}].name must be a string")
 
     return data
 
 
 def config_text(repo: Path) -> str:
     return (repo / ".ai-loop.yml").read_text(encoding="utf-8")
-

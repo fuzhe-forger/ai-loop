@@ -43,3 +43,50 @@ The loop controller will run:
 Your job is to make these pass.
 """
 
+
+def retry_prompt(
+    *,
+    task_content: str,
+    workspace: str,
+    iteration: int,
+    diff_text: str,
+    verify_json: str,
+    failure_log_tail: str,
+) -> str:
+    return f"""# AI Loop Retry Task
+
+You are still running inside the same isolated workspace.
+
+## Original Goal
+
+{task_content.strip()}
+
+## Retry Context
+
+- Current iteration: {iteration}
+- Previous verification failed.
+- Keep useful existing edits; only change what is needed to pass verification.
+- Do not commit.
+- Do not push.
+- Do not edit verification commands to bypass checks.
+
+## Current Diff
+
+```diff
+{diff_text.strip()}
+```
+
+## Verification Result
+
+```json
+{verify_json.strip()}
+```
+
+## Failure Log Tail
+
+```text
+{failure_log_tail.strip()}
+```
+
+Workspace: {workspace}
+"""

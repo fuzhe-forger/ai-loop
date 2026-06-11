@@ -13,8 +13,6 @@ agent:
     - exec
     - -s
     - workspace-write
-    - -a
-    - never
   timeout_sec: 1800
   max_iterations: 3
 
@@ -54,4 +52,3 @@ artifacts:
   root: runs
   log_tail_lines_for_retry: 200
   max_log_bytes: 10485760
-

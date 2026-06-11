@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 from .artifacts import read_json
+from .config import ConfigError, load_config
 from .init_project import InitError, init_repo
 from .runner import RunError, RunRequest, run
 
@@ -73,7 +74,13 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 def cmd_status(args: argparse.Namespace) -> int:
     repo = Path(args.repo).resolve()
-    run_path = repo / "runs" / args.run_id / "run.json"
+    try:
+        config = load_config(repo)
+    except ConfigError as exc:
+        print(f"status failed: {exc}", file=sys.stderr)
+        return 3
+    artifacts_root = repo / config.get("artifacts", {}).get("root", "runs")
+    run_path = artifacts_root / args.run_id / "run.json"
     if not run_path.exists():
         print(f"run not found: {run_path}", file=sys.stderr)
         return 2
@@ -84,7 +91,7 @@ def cmd_status(args: argparse.Namespace) -> int:
     print(f"error_code: {data.get('error_code') or ''}")
     print(f"iteration: {data.get('iteration')}/{data.get('max_iterations')}")
     print(f"workspace: {data.get('workspace')}")
-    print(f"summary: {repo / 'runs' / args.run_id / data.get('summary_path', 'summary.md')}")
+    print(f"summary: {artifacts_root / args.run_id / data.get('summary_path', 'summary.md')}")
     return int(data.get("exit_code") or 0)
 
 
@@ -105,4 +112,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

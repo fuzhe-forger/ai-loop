@@ -7,9 +7,13 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
+from .agent import AgentError, AgentRequest, run_agent
 from .artifacts import now_iso, update_run, write_json, write_text
 from .config import ConfigError, config_text, load_config
-from .prompt import first_prompt
+from .diff import collect_diff
+from .prompt import first_prompt, retry_prompt
+from .safety import SafetyError, SafetyRequest, run_safety
+from .verifier import VerifyError, VerifyRequest, run_verifier
 from .workspace import WorkspaceError, WorkspaceRequest, create_git_worktree
 
 
@@ -131,6 +135,7 @@ def run(request: RunRequest) -> Path:
                 workspace=str(workspace_path),
                 dry_run=False,
                 result=f"workspace creation failed: {exc}",
+                patch_paths=[],
             )
             write_text(run_dir / "summary.md", summary)
             update_run(run_dir, status="FAILED", error_code="FAILED_WORKSPACE", exit_code=4, finished_at=now_iso())
@@ -142,8 +147,7 @@ def run(request: RunRequest) -> Path:
         )
         update_run(run_dir, status="WORKSPACE_READY", workspace=str(workspace.path))
 
-    prompt = first_prompt(task_content, str(workspace_path), config)
-    write_text(run_dir / "prompt.1.md", prompt)
+    write_text(run_dir / "prompt.1.md", first_prompt(task_content, str(workspace_path), config))
     update_run(run_dir, status="PROMPT_READY", iteration=1)
 
     if request.dry_run:
@@ -156,24 +160,146 @@ def run(request: RunRequest) -> Path:
             workspace=str(workspace_path),
             dry_run=True,
             result="dry-run completed: config, task, workspace record, prompt, and summary artifacts were generated.",
+            patch_paths=[],
         )
         write_text(run_dir / "summary.md", summary)
         update_run(run_dir, status="PASSED", error_code=None, exit_code=0, finished_at=now_iso())
         return run_dir
 
-    summary = build_summary(
+    last_verify_error: VerifyError | None = None
+    max_iterations = int(config.get("agent", {}).get("max_iterations", 1))
+    patch_paths: list[str] = []
+    for iteration in range(1, max_iterations + 1):
+        prompt_path = run_dir / f"prompt.{iteration}.md"
+        update_run(run_dir, status="AGENT_RUNNING", iteration=iteration)
+        try:
+            run_agent(
+                AgentRequest(
+                    workspace=workspace_path,
+                    prompt_path=prompt_path,
+                    run_dir=run_dir,
+                    iteration=iteration,
+                    config=config,
+                )
+            )
+        except AgentError as exc:
+            fail_run(
+                run_dir=run_dir,
+                run_id=run_id,
+                error_code=exc.error_code,
+                exit_code=exc.exit_code,
+                repo=repo,
+                workspace=str(workspace_path),
+                dry_run=False,
+                result=str(exc),
+                patch_paths=patch_paths,
+            )
+            return run_dir
+
+        update_run(run_dir, status="AGENT_DONE")
+        diff_result = collect_diff(workspace_path, run_dir, iteration)
+        patch_paths.append(diff_result.patch_path)
+        update_run(run_dir, status="DIFF_COLLECTED", patch_paths=patch_paths)
+
+        try:
+            run_safety(SafetyRequest(run_dir=run_dir, iteration=iteration, diff=diff_result, config=config))
+        except SafetyError as exc:
+            fail_run(
+                run_dir=run_dir,
+                run_id=run_id,
+                error_code=exc.error_code,
+                exit_code=exc.exit_code,
+                repo=repo,
+                workspace=str(workspace_path),
+                dry_run=False,
+                result=f"safety failed: {exc}",
+                patch_paths=patch_paths,
+            )
+            return run_dir
+
+        update_run(run_dir, status="SAFETY_PASSED")
+        try:
+            run_verifier(VerifyRequest(workspace=workspace_path, run_dir=run_dir, iteration=iteration, config=config))
+        except VerifyError as exc:
+            last_verify_error = exc
+            if iteration >= max_iterations:
+                break
+            next_iteration = iteration + 1
+            write_text(
+                run_dir / f"prompt.{next_iteration}.md",
+                retry_prompt(
+                    task_content=task_content,
+                    workspace=str(workspace_path),
+                    iteration=next_iteration,
+                    diff_text=(run_dir / diff_result.patch_path).read_text(encoding="utf-8"),
+                    verify_json=(run_dir / f"verify.{iteration}.json").read_text(encoding="utf-8"),
+                    failure_log_tail=verify_failure_tail(run_dir, iteration, config),
+                ),
+            )
+            update_run(run_dir, status="RETRY_READY", iteration=next_iteration)
+            continue
+
+        summary = build_summary(
+            run_id=run_id,
+            status="PASSED",
+            error_code=None,
+            exit_code=0,
+            repo=repo,
+            workspace=str(workspace_path),
+            dry_run=False,
+            result="agent changes passed safety checks and verification commands.",
+            patch_paths=patch_paths,
+        )
+        write_text(run_dir / "summary.md", summary)
+        update_run(run_dir, status="PASSED", error_code=None, exit_code=0, finished_at=now_iso(), patch_paths=patch_paths)
+        return run_dir
+
+    fail_run(
+        run_dir=run_dir,
         run_id=run_id,
-        status="FAILED",
-        error_code="FAILED_INTERNAL",
-        exit_code=9,
+        error_code="FAILED_MAX_ITERATIONS",
+        exit_code=7,
         repo=repo,
         workspace=str(workspace_path),
         dry_run=False,
-        result="non dry-run execution is not implemented in this bootstrap slice.",
+        result=f"verification did not pass within {max_iterations} iterations: {last_verify_error}",
+        patch_paths=patch_paths,
+    )
+    return run_dir
+
+
+def fail_run(
+    *,
+    run_dir: Path,
+    run_id: str,
+    error_code: str,
+    exit_code: int,
+    repo: Path,
+    workspace: str,
+    dry_run: bool,
+    result: str,
+    patch_paths: list[str],
+) -> None:
+    summary = build_summary(
+        run_id=run_id,
+        status="FAILED",
+        error_code=error_code,
+        exit_code=exit_code,
+        repo=repo,
+        workspace=workspace,
+        dry_run=dry_run,
+        result=result,
+        patch_paths=patch_paths,
     )
     write_text(run_dir / "summary.md", summary)
-    update_run(run_dir, status="FAILED", error_code="FAILED_INTERNAL", exit_code=9, finished_at=now_iso())
-    return run_dir
+    update_run(
+        run_dir,
+        status="FAILED",
+        error_code=error_code,
+        exit_code=exit_code,
+        finished_at=now_iso(),
+        patch_paths=patch_paths,
+    )
 
 
 def build_summary(
@@ -186,7 +312,18 @@ def build_summary(
     workspace: str,
     dry_run: bool,
     result: str,
+    patch_paths: list[str],
 ) -> str:
+    artifacts = [
+        "run.json",
+        "task.md",
+        "config.snapshot.yml",
+        "workspace.txt",
+        "prompt.1.md",
+        "summary.md",
+    ]
+    artifacts.extend(patch_paths)
+    artifact_lines = "\n".join(f"- `{artifact}`" for artifact in artifacts)
     return f"""# AI Loop Run Summary
 
 - Run ID: `{run_id}`
@@ -203,10 +340,30 @@ def build_summary(
 
 ## Artifacts
 
-- `run.json`
-- `task.md`
-- `config.snapshot.yml`
-- `workspace.txt`
-- `prompt.1.md`
-- `summary.md`
+{artifact_lines}
 """
+
+
+def verify_failure_tail(run_dir: Path, iteration: int, config: dict) -> str:
+    tail_lines = int(config.get("artifacts", {}).get("log_tail_lines_for_retry", 200))
+    verify_path = run_dir / f"verify.{iteration}.json"
+    if not verify_path.exists():
+        return ""
+
+    import json
+
+    data = json.loads(verify_path.read_text(encoding="utf-8"))
+    chunks: list[str] = []
+    for command in data.get("commands", []):
+        if command.get("passed"):
+            continue
+        chunks.append(f"$ {command.get('command', '')}")
+        for key in ("stdout_path", "stderr_path"):
+            path_name = command.get(key)
+            if not path_name:
+                continue
+            log_path = run_dir / str(path_name)
+            if log_path.exists():
+                lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
+                chunks.extend(lines[-tail_lines:])
+    return "\n".join(chunks)

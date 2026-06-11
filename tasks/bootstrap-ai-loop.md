@@ -19,7 +19,7 @@
 
 ## 当前切片验收
 
-第一轮先实现 dry-run 全链路：
+dry-run 冒烟验证：
 
 ```bash
 ./bin/ai-loop run \
@@ -40,3 +40,12 @@ runs/<run-id>/
   summary.md
 ```
 
+本地 Git 闭环验证：
+
+```bash
+./bin/ai-loop run \
+  --repo /home/user/JAVA/ai/ai-loop \
+  --task tasks/bootstrap-ai-loop.md
+```
+
+非 dry-run 应在本地 `git worktree` 中执行 Agent，收集 `diff.N.patch`，通过 SafetyChecker 后运行 verify commands，失败时生成下一轮 `prompt.N.md` 并重试。
