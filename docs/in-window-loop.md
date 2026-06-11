@@ -50,6 +50,13 @@ cd /home/user/JAVA/ai/ai-loop
 ./bin/ai-loop run --repo <target-repo> --task <task-file>
 ```
 
+如果任务耗时较长，用异步脚本后台执行：
+
+```bash
+cd /home/user/JAVA/ai/ai-loop
+./bin/ai-loop-async start --repo <target-repo> -- run --task <task-file>
+```
+
 ### 3.3 任务包含外部副作用
 
 外部副作用包括：
@@ -127,6 +134,8 @@ Loop Result
 ```
 
 在外部副作用未被协议化前，不应把飞书写入、远程 Git、部署等动作直接塞进本地 `ai-loop run`。
+
+`bin/ai-loop-async` 只负责异步运行本地 `ai-loop plan/run`，不负责绕过审批。窗口内 Loop 仍然是外部副作用的准入层。
 
 ## 8. 当前落地规则
 

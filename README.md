@@ -18,6 +18,7 @@ This repository is bootstrapping itself. The implemented MVP slice supports:
 
 - `ai-loop init`
 - `ai-loop plan` for ambiguous tasks before implementation
+- `ai-loop-async start/status/logs/wait/stop/list` for background Loop jobs
 - `ai-loop run --dry-run`
 - `ai-loop run` with local `git worktree`
 - `codex exec` agent execution
@@ -33,6 +34,7 @@ This repository is bootstrapping itself. The implemented MVP slice supports:
 ./bin/ai-loop init
 ./bin/ai-loop plan --repo . --task tasks/bootstrap-ai-loop.md --dry-run
 ./bin/ai-loop run --repo . --task tasks/bootstrap-ai-loop.md --dry-run
+./bin/ai-loop-async start --repo . -- run --task tasks/bootstrap-ai-loop.md --dry-run
 ```
 
 Run a real local loop after committing or stashing source changes:

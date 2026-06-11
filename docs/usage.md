@@ -93,6 +93,22 @@ dry-run 检查编排链路：
 ./bin/ai-loop status --repo <target-repo> <run-id>
 ```
 
+后台异步执行：
+
+```bash
+./bin/ai-loop-async start \
+  --repo <target-repo> \
+  -- run --task <task-file> --dry-run
+```
+
+查看异步任务：
+
+```bash
+./bin/ai-loop-async status --repo <target-repo> <job-id>
+./bin/ai-loop-async logs --repo <target-repo> <job-id> -n 120
+./bin/ai-loop-async wait --repo <target-repo> <job-id>
+```
+
 ## 4. 推荐流程
 
 ### 4.1 准备任务文件
@@ -192,6 +208,65 @@ cd /home/user/JAVA/ai/ai-loop
 7. 生成 `plan.md` 和 `summary.md`。
 
 `plan.md` 应包含问题定义、假设、开放问题、范围、非目标、实现步骤、建议检查文件、预期 artifact、验证命令、安全边界，以及一份可直接进入 `ai-loop run` 的任务 Markdown 草案。
+
+### 4.6 异步执行
+
+长任务不要阻塞当前窗口，可以用 `bin/ai-loop-async` 后台运行。
+
+启动异步 run：
+
+```bash
+cd /home/user/JAVA/ai/ai-loop
+./bin/ai-loop-async start \
+  --repo <target-repo> \
+  -- run --task tasks/fix-example.md
+```
+
+启动异步 plan：
+
+```bash
+cd /home/user/JAVA/ai/ai-loop
+./bin/ai-loop-async start \
+  --repo <target-repo> \
+  -- plan --task tasks/raw-loop-request.md
+```
+
+返回示例：
+
+```text
+job_id: 20260611-async-run-a1b2c3d4
+status: RUNNING
+pid: 12345
+job_dir: <target-repo>/runs/.async/20260611-async-run-a1b2c3d4
+logs: <target-repo>/runs/.async/20260611-async-run-a1b2c3d4/output.log
+```
+
+常用控制命令：
+
+```bash
+./bin/ai-loop-async list --repo <target-repo>
+./bin/ai-loop-async status --repo <target-repo> <job-id>
+./bin/ai-loop-async logs --repo <target-repo> <job-id> -f
+./bin/ai-loop-async wait --repo <target-repo> <job-id>
+./bin/ai-loop-async stop --repo <target-repo> <job-id>
+```
+
+异步任务状态文件保存在：
+
+```text
+<target-repo>/runs/.async/<job-id>/
+  command.sh
+  runner.sh
+  output.log
+  pid
+  status
+  exit_code
+  created_at
+  started_at
+  finished_at
+```
+
+注意：异步脚本只解决“后台运行和状态查看”，不绕过窗口内 Loop 的审批策略。涉及飞书、网络、远程 Git、部署、删除等外部副作用时，仍必须先在窗口内 Loop 中列出副作用并确认策略。
 
 ## 5. 配置文件
 

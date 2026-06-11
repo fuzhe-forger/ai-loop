@@ -1,0 +1,376 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+AI_LOOP="${ROOT_DIR}/bin/ai-loop"
+
+usage() {
+  cat <<'EOF'
+Usage:
+  ai-loop-async start --repo <repo> [--job-id <id>] -- run  --task <task> [ai-loop args]
+  ai-loop-async start --repo <repo> [--job-id <id>] -- plan --task <task> [ai-loop args]
+  ai-loop-async status --repo <repo> <job-id>
+  ai-loop-async logs   --repo <repo> <job-id> [-n lines] [-f]
+  ai-loop-async wait   --repo <repo> <job-id> [--poll seconds]
+  ai-loop-async stop   --repo <repo> <job-id>
+  ai-loop-async list   --repo <repo>
+
+Examples:
+  ai-loop-async start --repo . -- run --task tasks/bootstrap-ai-loop.md --dry-run
+  ai-loop-async status --repo . 20260611-async-run-a1b2c3d4
+  ai-loop-async logs --repo . 20260611-async-run-a1b2c3d4 -f
+EOF
+}
+
+die() {
+  echo "ai-loop-async: $*" >&2
+  exit 2
+}
+
+iso_now() {
+  date -Is
+}
+
+repo_path() {
+  local repo="$1"
+  cd "$repo" >/dev/null 2>&1 || die "repo does not exist: $repo"
+  pwd
+}
+
+state_root() {
+  local repo="$1"
+  echo "${repo}/runs/.async"
+}
+
+random_hex() {
+  if command -v od >/dev/null 2>&1 && [ -r /dev/urandom ]; then
+    od -An -N4 -tx4 /dev/urandom | tr -d ' \n'
+  else
+    printf '%s' "$$"
+  fi
+}
+
+slug() {
+  printf '%s' "$1" | tr -cs '[:alnum:]_.-' '-' | sed 's/^-//; s/-$//'
+}
+
+make_job_id() {
+  local loop_command="$1"
+  printf '%s-async-%s-%s' "$(date +%Y%m%d-%H%M%S)" "$(slug "$loop_command")" "$(random_hex)"
+}
+
+parse_repo() {
+  local repo=""
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --repo)
+        [ "$#" -ge 2 ] || die "--repo requires a value"
+        repo="$2"
+        shift 2
+        ;;
+      *)
+        shift
+        ;;
+    esac
+  done
+  [ -n "$repo" ] || die "missing --repo"
+  repo_path "$repo"
+}
+
+job_dir() {
+  local repo="$1"
+  local job_id="$2"
+  echo "$(state_root "$repo")/${job_id}"
+}
+
+write_command_script() {
+  local script_path="$1"
+  shift
+  {
+    printf '#!/usr/bin/env bash\n'
+    printf 'set -euo pipefail\n'
+    printf 'exec'
+    for arg in "$@"; do
+      printf ' %q' "$arg"
+    done
+    printf '\n'
+  } >"$script_path"
+  chmod +x "$script_path"
+}
+
+write_runner_script() {
+  local script_path="$1"
+  cat >"$script_path" <<'EOF'
+#!/usr/bin/env bash
+set +e
+job_dir="$1"
+command_script="${job_dir}/command.sh"
+echo "RUNNING" >"${job_dir}/status"
+date -Is >"${job_dir}/started_at"
+"${command_script}" >"${job_dir}/output.log" 2>&1
+exit_code=$?
+printf '%s\n' "${exit_code}" >"${job_dir}/exit_code"
+date -Is >"${job_dir}/finished_at"
+if [ "${exit_code}" -eq 0 ]; then
+  echo "PASSED" >"${job_dir}/status"
+else
+  echo "FAILED" >"${job_dir}/status"
+fi
+exit "${exit_code}"
+EOF
+  chmod +x "$script_path"
+}
+
+job_status_value() {
+  local dir="$1"
+  local status="UNKNOWN"
+  [ -f "${dir}/status" ] && status="$(cat "${dir}/status")"
+  if [ "$status" = "RUNNING" ] && [ -f "${dir}/pid" ]; then
+    local pid
+    pid="$(cat "${dir}/pid")"
+    if ! kill -0 "$pid" >/dev/null 2>&1; then
+      if [ -f "${dir}/exit_code" ]; then
+        status="$(cat "${dir}/status")"
+      else
+        status="LOST"
+      fi
+    fi
+  fi
+  echo "$status"
+}
+
+cmd_start() {
+  local repo=""
+  local job_id=""
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --repo)
+        [ "$#" -ge 2 ] || die "--repo requires a value"
+        repo="$(repo_path "$2")"
+        shift 2
+        ;;
+      --job-id)
+        [ "$#" -ge 2 ] || die "--job-id requires a value"
+        job_id="$2"
+        shift 2
+        ;;
+      --)
+        shift
+        break
+        ;;
+      -h|--help)
+        usage
+        exit 0
+        ;;
+      *)
+        die "unknown start option: $1"
+        ;;
+    esac
+  done
+
+  [ -n "$repo" ] || die "missing --repo"
+  [ "$#" -gt 0 ] || die "missing ai-loop command after --"
+  local loop_command="$1"
+  shift
+  case "$loop_command" in
+    plan|run) ;;
+    *) die "async start only supports ai-loop plan or run" ;;
+  esac
+
+  [ -n "$job_id" ] || job_id="$(make_job_id "$loop_command")"
+  local root dir
+  root="$(state_root "$repo")"
+  dir="$(job_dir "$repo" "$job_id")"
+  mkdir -p "$root"
+  [ ! -e "$dir" ] || die "job already exists: $job_id"
+  mkdir -p "$dir"
+
+  write_command_script "${dir}/command.sh" "$AI_LOOP" "$loop_command" --repo "$repo" "$@"
+  write_runner_script "${dir}/runner.sh"
+  printf '%s\n' "$repo" >"${dir}/repo"
+  printf '%s\n' "$job_id" >"${dir}/job_id"
+  printf '%s\n' "$loop_command" >"${dir}/loop_command"
+  printf '%s\n' "$(iso_now)" >"${dir}/created_at"
+  echo "QUEUED" >"${dir}/status"
+
+  if command -v setsid >/dev/null 2>&1; then
+    setsid bash "${dir}/runner.sh" "$dir" >/dev/null 2>&1 < /dev/null &
+  else
+    nohup bash "${dir}/runner.sh" "$dir" >/dev/null 2>&1 < /dev/null &
+  fi
+  local pid=$!
+  printf '%s\n' "$pid" >"${dir}/pid"
+
+  echo "job_id: $job_id"
+  echo "status: RUNNING"
+  echo "pid: $pid"
+  echo "job_dir: $dir"
+  echo "logs: ${dir}/output.log"
+}
+
+cmd_status() {
+  local repo
+  repo="$(parse_repo "$@")"
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --repo) shift 2 ;;
+      *) break ;;
+    esac
+  done
+  [ "$#" -eq 1 ] || die "status requires <job-id>"
+  local job_id="$1"
+  local dir
+  dir="$(job_dir "$repo" "$job_id")"
+  [ -d "$dir" ] || die "job not found: $job_id"
+  echo "job_id: $job_id"
+  echo "status: $(job_status_value "$dir")"
+  [ -f "${dir}/pid" ] && echo "pid: $(cat "${dir}/pid")"
+  [ -f "${dir}/exit_code" ] && echo "exit_code: $(cat "${dir}/exit_code")"
+  [ -f "${dir}/created_at" ] && echo "created_at: $(cat "${dir}/created_at")"
+  [ -f "${dir}/started_at" ] && echo "started_at: $(cat "${dir}/started_at")"
+  [ -f "${dir}/finished_at" ] && echo "finished_at: $(cat "${dir}/finished_at")"
+  echo "job_dir: $dir"
+  echo "logs: ${dir}/output.log"
+}
+
+cmd_logs() {
+  local repo=""
+  local follow=false
+  local lines=80
+  local args=()
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --repo)
+        [ "$#" -ge 2 ] || die "--repo requires a value"
+        repo="$(repo_path "$2")"
+        shift 2
+        ;;
+      -f|--follow)
+        follow=true
+        shift
+        ;;
+      -n)
+        [ "$#" -ge 2 ] || die "-n requires a value"
+        lines="$2"
+        shift 2
+        ;;
+      *)
+        args+=("$1")
+        shift
+        ;;
+    esac
+  done
+  [ -n "$repo" ] || die "missing --repo"
+  [ "${#args[@]}" -eq 1 ] || die "logs requires <job-id>"
+  local dir log
+  dir="$(job_dir "$repo" "${args[0]}")"
+  log="${dir}/output.log"
+  [ -f "$log" ] || die "log not found: $log"
+  if [ "$follow" = true ]; then
+    tail -n "$lines" -f "$log"
+  else
+    tail -n "$lines" "$log"
+  fi
+}
+
+cmd_wait() {
+  local repo=""
+  local poll=2
+  local args=()
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --repo)
+        [ "$#" -ge 2 ] || die "--repo requires a value"
+        repo="$(repo_path "$2")"
+        shift 2
+        ;;
+      --poll)
+        [ "$#" -ge 2 ] || die "--poll requires a value"
+        poll="$2"
+        shift 2
+        ;;
+      *)
+        args+=("$1")
+        shift
+        ;;
+    esac
+  done
+  [ -n "$repo" ] || die "missing --repo"
+  [ "${#args[@]}" -eq 1 ] || die "wait requires <job-id>"
+  local dir status
+  dir="$(job_dir "$repo" "${args[0]}")"
+  [ -d "$dir" ] || die "job not found: ${args[0]}"
+  while true; do
+    status="$(job_status_value "$dir")"
+    case "$status" in
+      RUNNING|QUEUED)
+        sleep "$poll"
+        ;;
+      *)
+        cmd_status --repo "$repo" "${args[0]}"
+        if [ -f "${dir}/exit_code" ]; then
+          exit "$(cat "${dir}/exit_code")"
+        fi
+        exit 1
+        ;;
+    esac
+  done
+}
+
+cmd_stop() {
+  local repo
+  repo="$(parse_repo "$@")"
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --repo) shift 2 ;;
+      *) break ;;
+    esac
+  done
+  [ "$#" -eq 1 ] || die "stop requires <job-id>"
+  local dir pid status
+  dir="$(job_dir "$repo" "$1")"
+  [ -d "$dir" ] || die "job not found: $1"
+  status="$(job_status_value "$dir")"
+  if [ "$status" != "RUNNING" ]; then
+    echo "job_id: $1"
+    echo "status: $status"
+    exit 0
+  fi
+  pid="$(cat "${dir}/pid")"
+  kill -- "-${pid}" >/dev/null 2>&1 || kill "$pid" >/dev/null 2>&1 || true
+  echo "STOPPED" >"${dir}/status"
+  echo "130" >"${dir}/exit_code"
+  date -Is >"${dir}/finished_at"
+  echo "job_id: $1"
+  echo "status: STOPPED"
+}
+
+cmd_list() {
+  local repo
+  repo="$(parse_repo "$@")"
+  local root
+  root="$(state_root "$repo")"
+  [ -d "$root" ] || exit 0
+  for dir in "$root"/*; do
+    [ -d "$dir" ] || continue
+    local job_id
+    job_id="$(basename "$dir")"
+    printf '%s\t%s\n' "$job_id" "$(job_status_value "$dir")"
+  done | sort
+}
+
+main() {
+  [ "$#" -gt 0 ] || { usage; exit 2; }
+  case "$1" in
+    start) shift; cmd_start "$@" ;;
+    status) shift; cmd_status "$@" ;;
+    logs) shift; cmd_logs "$@" ;;
+    wait) shift; cmd_wait "$@" ;;
+    stop) shift; cmd_stop "$@" ;;
+    list) shift; cmd_list "$@" ;;
+    -h|--help|help) usage ;;
+    *) die "unknown command: $1" ;;
+  esac
+}
+
+main "$@"
