@@ -8,6 +8,7 @@ from pathlib import Path
 
 from .artifacts import read_json
 from .config import ConfigError, load_config
+from .discover import DiscoverError, DiscoverRequest, discover
 from .init_project import InitError, init_repo
 from .planner import PlanError, PlanRequest, plan
 from .runner import RunError, RunRequest, run
@@ -33,6 +34,11 @@ def build_parser() -> argparse.ArgumentParser:
     plan_parser.add_argument("--task", required=True, help="Raw request markdown file, relative to repo or absolute")
     plan_parser.add_argument("--dry-run", action="store_true", help="Generate planning artifacts without Agent execution")
     plan_parser.add_argument("--run-id", help="Explicit run id")
+
+    discover_parser = subcommands.add_parser("discover", help="Inspect local Loop state before starting work")
+    discover_parser.add_argument("--repo", default=".", help="Repository path, defaults to current directory")
+    discover_parser.add_argument("--output", help="Report path, relative to repo or absolute")
+    discover_parser.add_argument("--limit", type=int, default=20, help="Maximum recent runs to include")
 
     status_parser = subcommands.add_parser("status", help="Show run status")
     status_parser.add_argument("run_id", help="Run id")
@@ -77,6 +83,22 @@ def cmd_run(args: argparse.Namespace) -> int:
     print(f"status: {data['status']}")
     print(f"summary: {run_dir / 'summary.md'}")
     return int(data.get("exit_code") or 0)
+
+
+def cmd_discover(args: argparse.Namespace) -> int:
+    request = DiscoverRequest(
+        repo=Path(args.repo),
+        output=Path(args.output) if args.output else None,
+        limit=args.limit,
+    )
+    try:
+        report_path = discover(request)
+    except DiscoverError as exc:
+        print(f"discover failed: {exc}", file=sys.stderr)
+        return 3
+
+    print(f"discover: {report_path}")
+    return 0
 
 
 def cmd_plan(args: argparse.Namespace) -> int:
@@ -138,6 +160,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_run(args)
     if args.command == "plan":
         return cmd_plan(args)
+    if args.command == "discover":
+        return cmd_discover(args)
     if args.command == "status":
         return cmd_status(args)
 

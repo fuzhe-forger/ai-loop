@@ -53,7 +53,13 @@ safety:
 artifacts:
   root: runs
   log_tail_lines_for_retry: 200
-  max_log_bytes: 10485760
+max_log_bytes: 10485760
+"""
+
+DEFAULT_GITIGNORE = """runs/*
+!runs/.gitkeep
+!runs/.locks/
+!runs/.locks/.gitkeep
 """
 
 BOOTSTRAP_TASK = """# bootstrap-ai-loop

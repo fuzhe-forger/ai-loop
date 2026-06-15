@@ -53,6 +53,14 @@ cd /home/user/JAVA/ai/ai-loop
 ./bin/ai-loop init --repo <target-repo>
 ```
 
+`init` 会生成 `.ai-loop.yml`、默认任务文件、`runs/.gitkeep`、`runs/.locks/.gitkeep` 和用于忽略运行产物的 `.gitignore`。
+
+执行本地发现阶段：
+
+```bash
+./bin/ai-loop discover --repo <target-repo>
+```
+
 dry-run 检查编排链路：
 
 ```bash
@@ -154,7 +162,18 @@ cd /home/user/JAVA/ai/ai-loop
 
 规划阶段会产出 `runs/<run-id>/plan.md`，其中包含可保存到 `tasks/` 的任务草案。
 
-### 4.2 确认目标仓库干净
+### 4.2 执行发现阶段
+
+开始新任务前先查看本地 Loop 记忆和仓库状态：
+
+```bash
+cd /home/user/JAVA/ai/ai-loop
+./bin/ai-loop discover --repo <target-repo> --limit 20
+```
+
+`discover` 会读取目标仓库的 Git 工作区状态和 `runs/index.jsonl`，生成 `runs/discover.md`。它不会调用 Agent，不会修改源码，也会忽略 Loop 自己的 `runs/` 产物，适合在规划、dry-run、真实执行之前使用。
+
+### 4.3 确认目标仓库干净
 
 真实执行前建议确认：
 
@@ -164,7 +183,7 @@ git -C <target-repo> status -sb
 
 如果存在未提交改动，先人工确认是提交、stash，还是只跑 dry-run。
 
-### 4.3 先跑 dry-run
+### 4.4 先跑 dry-run
 
 ```bash
 cd /home/user/JAVA/ai/ai-loop
@@ -173,7 +192,7 @@ cd /home/user/JAVA/ai/ai-loop
 
 dry-run 只生成编排 artifact，不会调用 Agent，不会执行 verify，不会生成真实 patch。
 
-### 4.4 再跑真实 Loop
+### 4.5 再跑真实 Loop
 
 ```bash
 cd /home/user/JAVA/ai/ai-loop
@@ -192,8 +211,9 @@ cd /home/user/JAVA/ai/ai-loop
 8. 执行 verify commands。
 9. verify 失败时生成下一轮 `prompt.N.md` 并重试。
 10. 生成 `summary.md`。
+11. 更新 `runs/index.jsonl` 和 `runs/LOOP_STATE.md`。
 
-### 4.5 规划阶段
+### 4.6 规划阶段
 
 `ai-loop plan` 是 Loop 的第一阶段，专门处理“还不能直接执行”的任务。
 
@@ -203,13 +223,13 @@ cd /home/user/JAVA/ai/ai-loop
 2. 生成规划 Prompt。
 3. 使用只读 sandbox 调用 `codex exec`。
 4. 不创建 worktree。
-5. 不修改文件。
+5. 不修改源码，只写入 `runs/` artifact 和本地 Loop 记忆。
 6. 不执行 verify commands。
 7. 生成 `plan.md` 和 `summary.md`。
 
 `plan.md` 应包含问题定义、假设、开放问题、范围、非目标、实现步骤、建议检查文件、预期 artifact、验证命令、安全边界，以及一份可直接进入 `ai-loop run` 的任务 Markdown 草案。
 
-### 4.6 异步执行
+### 4.7 异步执行
 
 长任务不要阻塞当前窗口，可以用 `bin/ai-loop-async` 后台运行。
 
@@ -346,6 +366,14 @@ runs/<run-id>/
   summary.md
 ```
 
+跨运行记忆文件：
+
+```text
+runs/index.jsonl
+runs/LOOP_STATE.md
+runs/discover.md
+```
+
 关键文件：
 
 - `run.json`：运行状态、错误码、workspace、patch 路径。
@@ -357,6 +385,9 @@ runs/<run-id>/
 - `safety.N.json`：安全检查结果。
 - `verify.N.json`：验证命令结果。
 - `summary.md`：给人看的运行总结。
+- `runs/index.jsonl`：按 run id 去重的本地运行索引，用于跨运行发现。
+- `runs/LOOP_STATE.md`：由最近运行生成的人类可读本地状态摘要，默认不提交。
+- `runs/discover.md`：`ai-loop discover` 生成的发现报告。
 
 ## 7. 状态与错误码
 
@@ -389,10 +420,11 @@ runs/<run-id>/
 
 1. 优先使用 `/home/user/JAVA/ai/ai-loop`。
 2. 默认只用本地 Git，不访问远程。
-3. 如果任务不清晰，先用 `ai-loop plan` 产出方案和任务草案。
-4. 如果任务已清晰，先确认目标仓库、任务文件和验证命令。
-5. 优先 dry-run，再根据情况执行真实 Loop。
-6. 结果以 `runs/<run-id>/summary.md`、`plan.md` 或 `diff.N.patch` 为准。
+3. 先用 `ai-loop discover` 查看本地状态和历史失败。
+4. 如果任务不清晰，先用 `ai-loop plan` 产出方案和任务草案。
+5. 如果任务已清晰，先确认目标仓库、任务文件和验证命令。
+6. 优先 dry-run，再根据情况执行真实 Loop。
+7. 结果以 `runs/<run-id>/summary.md`、`plan.md` 或 `diff.N.patch` 为准。
 
 ## 9. 排障
 

@@ -11,10 +11,11 @@ from .agent import AgentError, AgentRequest, run_agent
 from .artifacts import now_iso, update_run, write_json, write_text
 from .config import ConfigError, config_text, load_config
 from .diff import collect_diff
+from .memory import record_run_memory
 from .prompt import first_prompt, retry_prompt
 from .safety import SafetyError, SafetyRequest, run_safety
 from .verifier import VerifyError, VerifyRequest, run_verifier
-from .workspace import WorkspaceError, WorkspaceRequest, create_git_worktree
+from .workspace import WorkspaceError, WorkspaceRequest, create_git_worktree, loop_artifact_prefixes
 
 
 class RunError(Exception):
@@ -121,7 +122,7 @@ def run(request: RunRequest) -> Path:
                     workspace_root=workspace_root,
                     base_ref=base_ref,
                     branch_prefix=config.get("workspace", {}).get("branch_prefix", "ai-loop/"),
-                    ignored_dirty_prefixes=(str(artifacts_root.relative_to(repo)) if artifacts_root.is_relative_to(repo) else "",),
+                    ignored_dirty_prefixes=loop_artifact_prefixes(repo, artifacts_root),
                 )
             )
         except WorkspaceError as exc:
@@ -139,6 +140,7 @@ def run(request: RunRequest) -> Path:
             )
             write_text(run_dir / "summary.md", summary)
             update_run(run_dir, status="FAILED", error_code="FAILED_WORKSPACE", exit_code=4, finished_at=now_iso())
+            record_run_memory(run_dir)
             return run_dir
         workspace_path = workspace.path
         write_text(
@@ -164,6 +166,7 @@ def run(request: RunRequest) -> Path:
         )
         write_text(run_dir / "summary.md", summary)
         update_run(run_dir, status="PASSED", error_code=None, exit_code=0, finished_at=now_iso())
+        record_run_memory(run_dir)
         return run_dir
 
     last_verify_error: VerifyError | None = None
@@ -252,6 +255,7 @@ def run(request: RunRequest) -> Path:
         )
         write_text(run_dir / "summary.md", summary)
         update_run(run_dir, status="PASSED", error_code=None, exit_code=0, finished_at=now_iso(), patch_paths=patch_paths)
+        record_run_memory(run_dir)
         return run_dir
 
     fail_run(
@@ -300,6 +304,7 @@ def fail_run(
         finished_at=now_iso(),
         patch_paths=patch_paths,
     )
+    record_run_memory(run_dir)
 
 
 def build_summary(

@@ -12,6 +12,7 @@ from typing import Any
 from .agent import AgentError, AgentRequest, run_agent
 from .artifacts import now_iso, update_run, write_json, write_text
 from .config import ConfigError, config_text, load_config
+from .memory import record_run_memory
 from .prompt import planning_prompt
 
 
@@ -100,6 +101,7 @@ def plan(request: PlanRequest) -> Path:
             ),
         )
         update_run(run_dir, status="PASSED", error_code=None, exit_code=0, finished_at=now_iso())
+        record_run_memory(run_dir)
         return run_dir
 
     update_run(run_dir, status="PLANNING_AGENT_RUNNING")
@@ -128,6 +130,7 @@ def plan(request: PlanRequest) -> Path:
             ),
         )
         update_run(run_dir, status="FAILED", error_code=exc.error_code, exit_code=exc.exit_code, finished_at=now_iso())
+        record_run_memory(run_dir)
         return run_dir
 
     final_message = run_dir / result.final_message_path
@@ -147,6 +150,7 @@ def plan(request: PlanRequest) -> Path:
             ),
         )
         update_run(run_dir, status="FAILED", error_code="FAILED_AGENT_EXIT", exit_code=5, finished_at=now_iso())
+        record_run_memory(run_dir)
         return run_dir
 
     plan_text = final_message.read_text(encoding="utf-8")
@@ -165,6 +169,7 @@ def plan(request: PlanRequest) -> Path:
         ),
     )
     update_run(run_dir, status="PASSED", error_code=None, exit_code=0, finished_at=now_iso(), plan_path="plan.md")
+    record_run_memory(run_dir)
     return run_dir
 
 

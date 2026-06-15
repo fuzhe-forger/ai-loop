@@ -18,6 +18,7 @@ This repository is bootstrapping itself. The implemented MVP slice supports:
 
 - `ai-loop init`
 - `ai-loop plan` for ambiguous tasks before implementation
+- `ai-loop discover` for local pre-flight discovery and Loop memory review
 - `ai-loop-async start/status/logs/wait/stop/list` for background Loop jobs
 - `ai-loop run --dry-run`
 - `ai-loop run` with local `git worktree`
@@ -26,12 +27,14 @@ This repository is bootstrapping itself. The implemented MVP slice supports:
 - safety checks for forbidden paths and diff size
 - deterministic verify commands
 - retry prompt generation up to `agent.max_iterations`
+- cross-run local memory in `runs/index.jsonl` and `runs/LOOP_STATE.md`
 - `ai-loop status <run-id>`
 
 ## Quick start
 
 ```bash
 ./bin/ai-loop init
+./bin/ai-loop discover --repo .
 ./bin/ai-loop plan --repo . --task tasks/bootstrap-ai-loop.md --dry-run
 ./bin/ai-loop run --repo . --task tasks/bootstrap-ai-loop.md --dry-run
 ./bin/ai-loop-async start --repo . -- run --task tasks/bootstrap-ai-loop.md --dry-run

@@ -32,6 +32,13 @@ class WorkspaceResult:
     created: bool
 
 
+def loop_artifact_prefixes(repo: Path, artifacts_root: Path) -> tuple[str, ...]:
+    prefixes: list[str] = []
+    if artifacts_root.is_relative_to(repo):
+        prefixes.append(str(artifacts_root.relative_to(repo)))
+    return tuple(prefix for prefix in prefixes if prefix)
+
+
 def create_git_worktree(request: WorkspaceRequest) -> WorkspaceResult:
     repo = request.repo.resolve()
     workspace_path = request.workspace_root / request.run_id
