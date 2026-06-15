@@ -1,0 +1,166 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+show_help() {
+  cat <<'HELP'
+Usage: scripts/review-packet.sh --case <case-id> --pattern <glob> [--include-patch-summary <file>] [--output <file>]
+
+Generate a local human-review packet for a case using run evidence directories.
+
+Options:
+  --case     Case identifier, for example FUZ-554, required
+  --pattern  Glob pattern under runs/, for example 'FUZ-554*', required
+  --include-patch-summary
+            Optional local patch-summary.md file to reference in the packet
+  --output   Optional file path to write the review packet
+  -h, --help Show this help
+
+This script is local-only. It reads runs/ and never performs remote writes.
+HELP
+}
+
+case_id=""
+pattern=""
+output=""
+patch_summary=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --case)
+      case_id="${2:-}"; shift 2 ;;
+    --pattern)
+      pattern="${2:-}"; shift 2 ;;
+    --include-patch-summary)
+      patch_summary="${2:-}"; shift 2 ;;
+    --output)
+      output="${2:-}"; shift 2 ;;
+    -h|--help)
+      show_help; exit 0 ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      show_help
+      exit 2 ;;
+  esac
+done
+
+if [[ -z "$case_id" || -z "$pattern" ]]; then
+  echo "--case and --pattern are required" >&2
+  show_help
+  exit 2
+fi
+
+if [[ -n "$patch_summary" && ! -s "$patch_summary" ]]; then
+  echo "Patch summary file is missing or empty: $patch_summary" >&2
+  exit 1
+fi
+
+shopt -s nullglob
+run_dirs=(runs/$pattern)
+shopt -u nullglob
+
+if [[ ${#run_dirs[@]} -eq 0 ]]; then
+  echo "No run directories matched: runs/$pattern" >&2
+  exit 1
+fi
+
+has_file() {
+  local path="$1"
+  if [[ -s "$path" ]]; then
+    printf 'yes'
+  else
+    printf 'no'
+  fi
+}
+
+run_count=0
+complete_core_count=0
+remote_write_count=0
+runs_table="| Run | Summary | Stage Report | Comment Draft | Writeback |
+|---|---|---|---|---|
+"
+
+for run_dir in "${run_dirs[@]}"; do
+  if [[ ! -d "$run_dir" ]]; then
+    continue
+  fi
+  run_count=$((run_count + 1))
+  run_id="$(basename "$run_dir")"
+  summary="$(has_file "$run_dir/summary.md")"
+  stage_report="$(has_file "$run_dir/stage-report.md")"
+  comment="$(has_file "$run_dir/multica-comment.md")"
+  writeback="$(has_file "$run_dir/writeback-summary.md")"
+  if [[ "$summary" == "yes" && "$stage_report" == "yes" && "$comment" == "yes" ]]; then
+    complete_core_count=$((complete_core_count + 1))
+  fi
+  if [[ "$writeback" == "yes" ]]; then
+    remote_write_count=$((remote_write_count + 1))
+  fi
+  runs_table+="| ${run_id} | ${summary} | ${stage_report} | ${comment} | ${writeback} |
+"
+done
+
+generated_at="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+
+patch_section=""
+if [[ -n "$patch_summary" ]]; then
+  patch_base="$(awk -F': ' '/^- Base: / {print $2; exit}' "$patch_summary")"
+  patch_changed_files="$(awk -F': ' '/^- Changed files: / {print $2; exit}' "$patch_summary")"
+  patch_tracked_files="$(awk -F': ' '/^- Tracked changed files: / {print $2; exit}' "$patch_summary")"
+  patch_untracked_files="$(awk -F': ' '/^- Untracked files: / {print $2; exit}' "$patch_summary")"
+  patch_scope_status="$(awk -F': ' '/^- Status: / {print $2; exit}' "$patch_summary")"
+
+  patch_section="## Patch Summary
+
+- Source: ${patch_summary}
+- Base: ${patch_base:-unknown}
+- Changed files: ${patch_changed_files:-unknown}
+- Tracked changed files: ${patch_tracked_files:-unknown}
+- Untracked files: ${patch_untracked_files:-unknown}
+- Scope check status: ${patch_scope_status:-unknown}
+
+"
+fi
+
+packet="# Review Packet: ${case_id}
+
+## Metadata
+
+- Generated at: ${generated_at}
+- Pattern: runs/${pattern}
+- Ordering: shell glob expansion order under runs/ with nullglob enabled
+
+## Scope
+
+- Case: ${case_id}
+- Run pattern: runs/${pattern}
+- Run count: ${run_count}
+- Runs with core evidence: ${complete_core_count}
+- Runs with writeback summary: ${remote_write_count}
+
+## Evidence Index
+
+${runs_table}
+${patch_section}
+## Review Checklist
+
+- Are the case goal and boundaries clear?
+- Do all formal review runs include summary, stage report, and comment draft?
+- Are remote side effects recorded in writeback summaries when they happened?
+- If a patch summary is included, does its scope check pass and match the intended change boundary?
+- Is there at least one final report or guide that a teammate can read first?
+- Is the next action explicit: continue, review, write back, or stop?
+
+## Suggested Review Decision
+
+- Approve for sharing if core evidence is complete and remote side effects are documented.
+- Request follow-up if any formal review run lacks summary or stage report.
+- Do not infer business completion from dry-run evidence alone.
+"
+
+if [[ -n "$output" ]]; then
+  mkdir -p "$(dirname "$output")"
+  printf '%s' "$packet" > "$output"
+  echo "review_packet: $output"
+else
+  printf '%s' "$packet"
+fi
