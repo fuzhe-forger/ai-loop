@@ -109,6 +109,33 @@ def present(path: str) -> bool:
     return item.is_file() and item.stat().st_size > 0
 
 
+def read_text(path: str) -> str:
+    item = Path(path)
+    if not item.is_file():
+        return ""
+    return item.read_text(encoding="utf-8", errors="replace")
+
+
+def writeback_completed(path: str) -> bool:
+    text = read_text(path)
+    if not text:
+        return False
+    completed_markers = [
+        "Comment written: true",
+        "Status written: true",
+        "Metadata written: true",
+        "Comment ID:",
+    ]
+    failed_markers = [
+        "Comment written: failed",
+        "Status written: failed",
+        "Metadata written: failed",
+    ]
+    return any(marker in text for marker in completed_markers) and not any(
+        marker in text for marker in failed_markers
+    )
+
+
 artifacts = {
     "summary": {"path": summary_path, "present": present(summary_path)},
     "stage_report": {"path": stage_report_path, "present": present(stage_report_path)},
@@ -126,6 +153,7 @@ missing_core = [
     for name in ("summary", "stage_report", "comment_draft")
     if not artifacts[name]["present"]
 ]
+remote_write_completed = writeback_completed(writeback_path)
 
 if missing_core:
     from_state = "running"
@@ -139,10 +167,10 @@ elif not artifacts["verification_report"]["present"]:
     reason = "core evidence complete; verification report is not present"
     next_actor = "execution_agent"
     side_effects_allowed = False
-elif artifacts["writeback_summary"]["present"]:
+elif remote_write_completed:
     from_state = "writeback_ready"
     to_state = "done"
-    reason = "writeback summary present; ready for final human confirmation"
+    reason = "writeback summary shows at least one completed remote write"
     next_actor = "human"
     side_effects_allowed = False
 else:
@@ -156,6 +184,7 @@ checks = {
     "core_evidence": "FAILED" if missing_core else "PASSED",
     "verification_report": "PRESENT" if artifacts["verification_report"]["present"] else "MISSING",
     "writeback_summary": "PRESENT" if artifacts["writeback_summary"]["present"] else "MISSING",
+    "remote_write_completed": "YES" if remote_write_completed else "NO",
 }
 
 data = {
