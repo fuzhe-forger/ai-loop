@@ -1248,3 +1248,43 @@ Multica Loop 组织层脚本已可用，完整链路验证通过：`task → dry
 ### 结果
 
 L2 项目记忆层已建立，FUZ-554 经验已沉淀为案例。下一步：选择试点项目接入 Multica Loop，在实际项目中补充决策记录和踩坑记录。
+
+## 2026-06-16：受控回写门禁
+
+### 目标
+
+建立 comment/status/metadata 回写的门禁机制，确保远端副作用可控、可审计、可撤销。
+
+### 执行
+
+- 新增受控回写策略模型文档：`docs/ai-work-orchestration/16-controlled-writeback-policy.md`。
+- 实现回写门禁脚本：`scripts/writeback-gate.sh`。
+- 定义回写类型和前置条件：comment（低风险）、status（中风险）、metadata（高风险）。
+- 定义多角色协作模型：execution_agent、reviewer、human、scheduler、tester、scribe。
+- 定义审计日志格式：writeback-summary。
+- 新增阶段报告：`docs/ai-work-orchestration/reports/2026-06-16-phase-56-controlled-writeback.md`。
+
+### 验证结果
+
+全部测试通过：
+
+- Comment gate：PASSED（core evidence + draft + no secrets）
+- Status gate：PASSED（core evidence + strict gate + state gate + draft）
+- Metadata gate without approval：FAILED（requires --approved-by）
+- Metadata gate with approval：PASSED（all checks + human approval）
+- Invalid run：ERROR（run not found）
+
+### 边界
+
+- 未修改 multica-loop.sh，仍使用原有回写逻辑。
+- 未实现自动回滚。
+- 未实现回写历史查询。
+- 门禁脚本可独立使用，也可集成到其他脚本。
+
+### 提交记录
+
+- `cbf7e30 Build Phase E controlled writeback gate`
+
+### 结果
+
+受控回写门禁已建立，可以开始集成到 multica-loop.sh 和其他回写场景。Phase E（受控回写与多角色协作）完成。下一步：选择试点项目验证端到端流程，或进入 Phase F 团队分享与复制。
