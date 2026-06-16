@@ -185,7 +185,34 @@ Collect → Summarize → Review → Strict Gate → State Gate → Human Decisi
 
 ---
 
-## 10 红线
+## 10 机组路由
+
+**标题**
+从 `next_actor` 到 `assigned_actor`
+
+**正文**
+- 状态机输出抽象下一角色
+- 机组模型映射到具体 agent
+- Review Packet 展示 `Assigned Actor`
+
+**路由表**
+| next_actor | assigned_actor |
+|---|---|
+| `execution_agent` | 顾实 |
+| `reviewer` | 裴衡 |
+| `human` | 人类 |
+| `scheduler` | 黑墙 |
+| `tester` | 测真 |
+| `scribe` | 简辞 |
+
+**流程**
+```text
+state-evaluation → metadata-draft → route-actor → Assigned Actor
+```
+
+---
+
+## 11 红线
 
 **标题**
 哪些事情坚决不自动化
@@ -204,7 +231,7 @@ Collect → Summarize → Review → Strict Gate → State Gate → Human Decisi
 
 ---
 
-## 11 Demo 路径
+## 12 Demo 路径
 
 **标题**
 演示 artifacts，不赌 live coding
@@ -222,7 +249,7 @@ Collect → Summarize → Review → Strict Gate → State Gate → Human Decisi
 
 ---
 
-## 12 路线图
+## 13 路线图
 
 **标题**
 从单任务闭环到团队级 AI 工作系统
@@ -240,7 +267,7 @@ A/B/C 交界：证据链已跑通，组织层开始抽象。
 
 ---
 
-## 13 北极星指标
+## 14 北极星指标
 
 **标题**
 不只看自动化率，看治理能力
@@ -258,7 +285,7 @@ A/B/C 交界：证据链已跑通，组织层开始抽象。
 
 ---
 
-## 14 结束页
+## 15 结束页
 
 **标题**
 让 AI 的工作变成工程事实

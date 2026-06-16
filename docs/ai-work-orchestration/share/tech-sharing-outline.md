@@ -105,7 +105,22 @@ Multica Issue
 
 > 我们不是复制别人的项目，而是把已有经验吸收进自研 Multica Loop。
 
-## 6. 工具链：把口号变成门禁
+## 6. 机组路由：从 next_actor 到 assigned_actor
+
+展示：Agent Crew model + review packet 中的 Assigned Actor。
+
+讲法：
+
+- 状态机只输出抽象下一角色：`next_actor`。
+- 机组模型把抽象角色映射成具体处理者：`assigned_actor`。
+- `execution_agent -> 顾实`，`reviewer -> 裴衡`，`human -> 人类`。
+- `scheduler -> 黑墙`，`tester -> 测真`，`scribe -> 简辞`。
+
+落点：
+
+> 状态判断和人员编排解耦，才能让路由可复核、可替换、可升级。
+
+## 7. 工具链：把口号变成门禁
 
 核心工具：
 
@@ -120,7 +135,7 @@ Multica Issue
 
 > 工具不是主角，门禁才是主角。
 
-## 7. 红线：哪些事情坚决不自动化
+## 8. 红线：哪些事情坚决不自动化
 
 - 不自动 done。
 - 不存 token / 密钥。
@@ -130,7 +145,7 @@ Multica Issue
 - 不允许无限循环。
 - 不静默失败。
 
-## 8. North Star 路线图
+## 9. North Star 路线图
 
 - Phase A：可审计单任务闭环。
 - Phase B：结构化 evidence 标准。
@@ -139,7 +154,7 @@ Multica Issue
 - Phase E：受控回写与多角色协作。
 - Phase F：团队分享与复制。
 
-## 9. 现场演示建议
+## 10. 现场演示建议
 
 演示不追求 live coding，避免不稳定。建议演示 artifacts：
 
@@ -150,6 +165,6 @@ Multica Issue
 5. 运行 `share-preflight.sh` 或 `verify-toolchain --strict --state-gate`。
 6. 展示 scope split report。
 
-## 10. 结束语
+## 11. 结束语
 
 > AI 进入工程体系，不是靠更大的模型，而是靠更清晰的控制结构。我们这套实践的价值，是让 AI 的每一步都能被看见、被验证、被接管、被复盘。

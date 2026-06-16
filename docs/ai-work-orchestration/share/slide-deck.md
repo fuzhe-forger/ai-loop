@@ -215,7 +215,37 @@ collect → summarize → review → strict gate → state gate → human decisi
 
 ---
 
-## Slide 10：红线
+## Slide 10：机组路由
+
+**标题**：从 `next_actor` 到 `assigned_actor`
+
+**核心信息**：
+- 状态机只输出抽象下一角色。
+- 机组模型把角色落到具体 agent。
+- review packet 直接显示 `Assigned Actor`。
+
+**建议画面**：
+| next_actor | assigned_actor |
+|---|---|
+| `execution_agent` | 顾实 |
+| `reviewer` | 裴衡 |
+| `human` | 人类 |
+| `scheduler` | 黑墙 |
+| `tester` | 测真 |
+| `scribe` | 简辞 |
+
+```text
+state-evaluation → metadata-draft → route-actor → Assigned Actor
+review_ready → reviewer → 裴衡
+done         → human    → 人类
+```
+
+**讲者备注**：
+这一步解决的是“谁来处理下一步”。状态机不直接绑定具体人/agent，只给出 `next_actor`；机组模型负责把它映射成具体角色。这样路由可复核、可替换、可升级。
+
+---
+
+## Slide 11：红线
 
 **标题**：哪些事情坚决不自动化
 
@@ -236,7 +266,7 @@ collect → summarize → review → strict gate → state gate → human decisi
 
 ---
 
-## Slide 11：现场 Demo 路径
+## Slide 12：现场 Demo 路径
 
 **标题**：演示 artifacts，不赌 live coding
 
@@ -256,7 +286,7 @@ collect → summarize → review → strict gate → state gate → human decisi
 
 ---
 
-## Slide 12：路线图
+## Slide 13：路线图
 
 **标题**：从单任务闭环到团队级 AI 工作系统
 
@@ -276,7 +306,7 @@ collect → summarize → review → strict gate → state gate → human decisi
 
 ---
 
-## Slide 13：北极星指标
+## Slide 14：北极星指标
 
 **标题**：不只看自动化率，看治理能力
 
@@ -296,7 +326,7 @@ collect → summarize → review → strict gate → state gate → human decisi
 
 ---
 
-## Slide 14：结束页
+## Slide 15：结束页
 
 **标题**：让 AI 的工作变成工程事实
 
