@@ -109,6 +109,7 @@
 - Assigned Actor Gate 阶段报告：`reports/2026-06-16-phase-51-assigned-actor-gate.md`
 - Agent Crew 分享更新阶段报告：`reports/2026-06-16-phase-52-agent-crew-sharing.md`
 - Multica Loop 验证阶段报告：`reports/2026-06-16-phase-53-multica-loop-validation.md`
+- 技术分享彩排阶段报告：`reports/2026-06-16-phase-54-sharing-rehearsal.md`
 
 ## 使用方式
 
