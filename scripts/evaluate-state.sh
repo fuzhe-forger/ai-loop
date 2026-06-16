@@ -3,13 +3,14 @@ set -euo pipefail
 
 show_help() {
   cat <<'HELP'
-Usage: scripts/evaluate-state.sh --run-id <run-id> [--issue <issue-id>] [--output <file>] [--markdown <file>]
+Usage: scripts/evaluate-state.sh --run-id <run-id> [--issue <issue-id>] [--write-run] [--output <file>] [--markdown <file>]
 
 Evaluate a local ai-loop run directory and suggest the next Multica Loop state.
 
 Options:
   --run-id    Run directory name under runs/, required
   --issue     Optional issue identifier, for example FUZ-554
+  --write-run Write state-evaluation.json and state-evaluation.md into the run directory
   --output    Optional JSON output path
   --markdown  Optional Markdown output path
   -h, --help  Show this help
@@ -22,6 +23,7 @@ run_id=""
 issue=""
 output=""
 markdown=""
+write_run="false"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -29,6 +31,8 @@ while [[ $# -gt 0 ]]; do
       run_id="${2:-}"; shift 2 ;;
     --issue)
       issue="${2:-}"; shift 2 ;;
+    --write-run)
+      write_run="true"; shift ;;
     --output)
       output="${2:-}"; shift 2 ;;
     --markdown)
@@ -52,6 +56,11 @@ run_dir="runs/${run_id}"
 if [[ ! -d "$run_dir" ]]; then
   echo "Run directory not found: $run_dir" >&2
   exit 1
+fi
+
+if [[ "$write_run" == "true" ]]; then
+  output="$run_dir/state-evaluation.json"
+  markdown="$run_dir/state-evaluation.md"
 fi
 
 if [[ -z "$issue" ]]; then

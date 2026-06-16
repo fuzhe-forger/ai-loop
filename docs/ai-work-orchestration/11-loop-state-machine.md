@@ -171,8 +171,8 @@ intake
 - `collect-evidence.sh` 负责收集状态输入。
 - `verify-toolchain.sh --strict` 负责 Core Evidence 门禁。
 - `evaluate-state.sh` 负责输出 `from/to/reason/next_actor`。
+- `evaluate-state.sh --write-run` 可把建议状态写入 `state-evaluation.json` 和 `state-evaluation.md`。
 
 ## 下一步
 
-- 把状态输出写入 run evidence。
 - 在 Multica comment 中展示建议状态，而不是直接改远端状态。
