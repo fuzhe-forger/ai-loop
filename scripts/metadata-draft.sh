@@ -101,6 +101,16 @@ if evidence_path.is_file() and evidence_path.stat().st_size > 0:
 pipeline_status = state.get("to") or "unknown"
 state_reason = state.get("reason") or "unknown"
 blocked_reason = state_reason if pipeline_status == "blocked" else ""
+next_actor = state.get("required_next_actor") or "unknown"
+actor_routes = {
+    "execution_agent": "顾实",
+    "reviewer": "裴衡",
+    "human": "人类",
+    "scheduler": "黑墙",
+    "tester": "测真",
+    "scribe": "简辞",
+}
+assigned_actor = actor_routes.get(next_actor, "黑墙")
 
 metadata = {
     "pipeline_status": pipeline_status,
@@ -108,7 +118,8 @@ metadata = {
     "latest_run_id": state.get("run_id") or run_id,
     "strict_gate": strict_gate,
     "blocked_reason": blocked_reason,
-    "next_actor": state.get("required_next_actor") or "unknown",
+    "next_actor": next_actor,
+    "assigned_actor": assigned_actor,
     "state_reason": state_reason,
     "remote_write_completed": state.get("checks", {}).get("remote_write_completed") == "YES",
     "writeback_summary": writeback_summary_path if Path(writeback_summary_path).is_file() else "",
@@ -158,6 +169,7 @@ print(f"""# Issue Metadata Draft: {data['issue']}
 | strict_gate | {metadata['strict_gate']} |
 | blocked_reason | {metadata['blocked_reason']} |
 | next_actor | {metadata['next_actor']} |
+| assigned_actor | {metadata['assigned_actor']} |
 | state_reason | {metadata['state_reason']} |
 | remote_write_completed | {str(metadata['remote_write_completed']).lower()} |
 | writeback_summary | {metadata['writeback_summary']} |

@@ -128,11 +128,25 @@ else:
 PY
 }
 
+assigned_actor_for() {
+  local next_actor="$1"
+  case "$next_actor" in
+    execution_agent) printf '顾实' ;;
+    reviewer) printf '裴衡' ;;
+    human) printf '人类' ;;
+    scheduler) printf '黑墙' ;;
+    tester) printf '测真' ;;
+    scribe) printf '简辞' ;;
+    not\ evaluated) printf 'not evaluated' ;;
+    *) printf '黑墙' ;;
+  esac
+}
+
 run_count=0
 complete_core_count=0
 remote_write_count=0
-runs_table="| Run | Summary | Stage Report | Comment Draft | Writeback | Remote Write Done | Suggested State | Next Actor |
-|---|---|---|---|---|---|---|---|
+runs_table="| Run | Summary | Stage Report | Comment Draft | Writeback | Remote Write Done | Suggested State | Next Actor | Assigned Actor |
+|---|---|---|---|---|---|---|---|---|
 "
 
 for run_dir in "${run_dirs[@]}"; do
@@ -148,13 +162,14 @@ for run_dir in "${run_dirs[@]}"; do
   remote_write_done="$(state_check "$run_dir/state-evaluation.json" "$run_dir/writeback-summary.md" remote_write_completed)"
   suggested_state="$(state_field "$run_dir/state-evaluation.json" to)"
   next_actor="$(state_field "$run_dir/state-evaluation.json" required_next_actor)"
+  assigned_actor="$(assigned_actor_for "$next_actor")"
   if [[ "$summary" == "yes" && "$stage_report" == "yes" && "$comment" == "yes" ]]; then
     complete_core_count=$((complete_core_count + 1))
   fi
   if [[ "$writeback" == "yes" ]]; then
     remote_write_count=$((remote_write_count + 1))
   fi
-  runs_table+="| ${run_id} | ${summary} | ${stage_report} | ${comment} | ${writeback} | ${remote_write_done} | ${suggested_state} | ${next_actor} |
+  runs_table+="| ${run_id} | ${summary} | ${stage_report} | ${comment} | ${writeback} | ${remote_write_done} | ${suggested_state} | ${next_actor} | ${assigned_actor} |
 "
 done
 
@@ -205,6 +220,7 @@ ${patch_section}
 - Are the case goal and boundaries clear?
 - Do all formal review runs include summary, stage report, and comment draft?
 - Do evaluated runs have a clear suggested state and next actor?
+- Does each evaluated run map to a concrete assigned actor?
 - Does the remote-write-done column match the intended writeback evidence?
 - Are remote side effects recorded in writeback summaries when they happened?
 - If a patch summary is included, does its scope check pass and match the intended change boundary?

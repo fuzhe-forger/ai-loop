@@ -25,6 +25,7 @@ Issue metadata 是 Multica Loop 的 L1 工作记忆。
 | `strict_gate` | `PASSED` | Core Evidence strict gate 结果 |
 | `blocked_reason` | `missing_evidence: summary` | 阻塞原因，无阻塞时为空 |
 | `next_actor` | `reviewer` | 下一步角色 |
+| `assigned_actor` | `裴衡` | 机组模型映射出的具体角色 |
 | `state_reason` | `core evidence complete...` | 状态建议原因 |
 | `remote_write_completed` | `false` | 是否已有远端写入完成证据 |
 | `writeback_summary` | `runs/<run>/writeback-summary.md` | 写回证据路径 |
@@ -65,6 +66,7 @@ Issue metadata 是 Multica Loop 的 L1 工作记忆。
 | `pipeline_status` | `state-evaluation.json.to` |
 | `latest_run_id` | `state-evaluation.json.run_id` |
 | `next_actor` | `state-evaluation.json.required_next_actor` |
+| `assigned_actor` | `route-actor.sh` 根据 `next_actor` 映射 |
 | `state_reason` | `state-evaluation.json.reason` |
 | `strict_gate` | `evidence.json.checks.strict_gate` 或 verification report |
 | `blocked_reason` | `state-evaluation.json.reason`，仅当状态为 `blocked` |
@@ -84,6 +86,7 @@ Issue metadata 是 Multica Loop 的 L1 工作记忆。
     "strict_gate": "PASSED",
     "blocked_reason": "",
     "next_actor": "reviewer",
+    "assigned_actor": "裴衡",
     "state_reason": "core evidence complete and verification report present",
     "remote_write_completed": false,
     "writeback_summary": "runs/FUZ-554-scope-split-review/writeback-summary.md",

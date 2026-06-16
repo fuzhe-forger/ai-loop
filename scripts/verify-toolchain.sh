@@ -37,12 +37,14 @@ show_checks() {
 - bash -n scripts/metadata-draft.sh
 - bash -n scripts/refresh-run-evidence.sh
 - bash -n scripts/share-preflight.sh
+- bash -n scripts/route-actor.sh
 - ./scripts/multica-loop.sh --policy-help
 - ./scripts/collect-evidence.sh --issue <case-id> --run-id <sample-run>
 - ./scripts/evaluate-state.sh --issue <case-id> --run-id <sample-run>
 - ./scripts/metadata-draft.sh --issue <case-id> --run-id <sample-run>
 - ./scripts/refresh-run-evidence.sh --help
 - ./scripts/share-preflight.sh --help
+- ./scripts/route-actor.sh --next-actor reviewer
 - ./scripts/patch-summary.sh --help
 - ./scripts/evidence-checklist.sh --run-id <sample-run>
 - ./scripts/evidence-index.sh --pattern <pattern>
@@ -130,12 +132,14 @@ run_check "bash -n scripts/evaluate-state.sh" bash -n scripts/evaluate-state.sh
 run_check "bash -n scripts/metadata-draft.sh" bash -n scripts/metadata-draft.sh
 run_check "bash -n scripts/refresh-run-evidence.sh" bash -n scripts/refresh-run-evidence.sh
 run_check "bash -n scripts/share-preflight.sh" bash -n scripts/share-preflight.sh
+run_check "bash -n scripts/route-actor.sh" bash -n scripts/route-actor.sh
 run_check "multica-loop --policy-help" ./scripts/multica-loop.sh --policy-help
 run_check "collect-evidence" ./scripts/collect-evidence.sh --issue "$case_id" --run-id "$first_run"
 run_check "evaluate-state" ./scripts/evaluate-state.sh --issue "$case_id" --run-id "$first_run"
 run_check "metadata-draft" ./scripts/metadata-draft.sh --issue "$case_id" --run-id "$first_run"
 run_check "refresh-run-evidence --help" ./scripts/refresh-run-evidence.sh --help
 run_check "share-preflight --help" ./scripts/share-preflight.sh --help
+run_check "route-actor" ./scripts/route-actor.sh --next-actor reviewer
 run_check "patch-summary --help" ./scripts/patch-summary.sh --help
 run_check "evidence-checklist" ./scripts/evidence-checklist.sh --run-id "$first_run"
 run_check "evidence-index" ./scripts/evidence-index.sh --pattern "$pattern"
