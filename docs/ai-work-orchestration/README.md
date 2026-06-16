@@ -19,9 +19,9 @@
 ## 当前阶段
 
 - 项目：`AI 工作编排实践：Multica × ai-loop`
-- 当前重点：把真实低风险任务、证据门禁和分享材料串成可复核阶段包
+- 当前重点：把真实低风险任务、证据门禁、Agent Crew 路由和分享材料串成可复核阶段包
 - 默认策略：本地优先、证据优先、人类复核
-- 当前案例：`FUZ-554` 已完成 Phase 24 scope split review；当前本地 `FUZ-554*` run 共 22 个，全部具备 core evidence
+- 当前案例：`FUZ-554` 已完成 Phase 52 Agent Crew sharing update；当前本地 `FUZ-554*` run 共 22 个，全部具备 core evidence
 
 ## 推荐阅读顺序
 
@@ -106,6 +106,7 @@
 - Agent Crew 机组模型阶段报告：`reports/2026-06-16-phase-49-agent-crew-model.md`
 - Agent Crew 路由阶段报告：`reports/2026-06-16-phase-50-agent-crew-routing.md`
 - Assigned Actor Gate 阶段报告：`reports/2026-06-16-phase-51-assigned-actor-gate.md`
+- Agent Crew 分享更新阶段报告：`reports/2026-06-16-phase-52-agent-crew-sharing.md`
 
 ## 使用方式
 
