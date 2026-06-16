@@ -7,10 +7,11 @@
 1. `09-north-star.md`：终极效果和技术分享主线。
 2. `00-vision.md`：为什么要做这件事。
 3. `01-domain-model.md`：项目、issue、run、evidence、policy 的关系。
-4. `03-sharing-roadmap.md`：怎么讲给团队听、怎么分阶段分享。
-5. `05-case-playbook.md`：低风险案例怎么执行。
-6. `cases/FUZ-554/README.md`：第一个可复盘案例。
-7. `reports/`：每个阶段的正式报告。
+4. `10-evidence-standard.md`：AI 工作证据包的正式标准。
+5. `03-sharing-roadmap.md`：怎么讲给团队听、怎么分阶段分享。
+6. `05-case-playbook.md`：低风险案例怎么执行。
+7. `cases/FUZ-554/README.md`：第一个可复盘案例。
+8. `reports/`：每个阶段的正式报告。
 
 ## 当前阶段
 
@@ -26,6 +27,7 @@
 - `09-north-star.md`
 - `00-vision.md`
 - `01-domain-model.md`
+- `10-evidence-standard.md`
 
 ### 2. 路线
 
@@ -68,6 +70,7 @@
 - Scope split review 报告：`reports/2026-06-15-phase-24-scope-split-review.md`
 - Multica Loop 重构设计：`08-multica-loop-refactor.md`
 - North Star 终局规划：`09-north-star.md`
+- Evidence 标准：`10-evidence-standard.md`
 - 技术分享包总览：`share/README.md`
 - 技术分享大纲：`share/tech-sharing-outline.md`
 - 现场演示脚本：`share/demo-script.md`
@@ -76,6 +79,7 @@
 - 逐页讲者稿：`share/speaker-notes.md`
 - 会前预检清单：`share/preflight-checklist.md`
 - 会前预检阶段报告：`reports/2026-06-16-phase-33-preflight-checklist.md`
+- Evidence 标准阶段报告：`reports/2026-06-16-phase-34-evidence-standard.md`
 
 ## 使用方式
 
