@@ -1379,3 +1379,48 @@ Phase F（团队分享与复制）完成。Phase A-F 全部完成，AI 工作编
 ### 结果
 
 Phase G（自动化增强）完成。系统从"人工+门禁"升级到"AI 辅助+人工决策+门禁保护"。Phase A-G 全部完成，北极星目标达成 90%。下一步：接入真实 AI 模型，或在实际项目中持续优化启发式规则。
+
+## 2026-06-16：本地落地规约
+
+### 目标
+
+将 AI 工作编排系统在本地真正使用起来，落实三条默认规则：所有任务上 Multica 追踪、所有智能体按 Loop 协同、所有工作沉淀到 Obsidian 作为知识库和自进化输入。
+
+### 执行
+
+- 新增本地运行总规约：`docs/ai-work-orchestration/21-local-operating-protocol.md`。
+- 新增 Multica 追踪入口门禁：`scripts/loop-intake-gate.sh`。
+- 新增智能体协同 handoff 生成器：`scripts/loop-handoff.sh`。
+- 新增 Obsidian 自进化流程文档：`docs/ai-work-orchestration/22-obsidian-self-evolution.md`。
+- 纳入 Obsidian 同步脚本：`scripts/obsidian-sync.sh`、`scripts/daily-ops-sync.sh`。
+- 纳入本地交接状态：`state/multica-loop-obsidian-handoff.md`。
+- 新增阶段报告：`docs/ai-work-orchestration/reports/2026-06-16-phase-59-local-adoption.md`。
+
+### 验证结果
+
+- `loop-intake-gate.sh` 语法检查：PASSED。
+- `loop-handoff.sh` 语法检查：PASSED。
+- `obsidian-sync.sh` 语法检查：PASSED。
+- `daily-ops-sync.sh` 语法检查：PASSED。
+- FUZ-554 intake gate：PASSED。
+- 顾实 → 裴衡 handoff：PASSED。
+- Obsidian dry-run：PASSED，预览生成 23 个文档镜像、25 个 CodeGraph 仓库卡片、45 个 run 证据页。
+
+### 边界
+
+- 未新建 Multica issue。
+- 未写入 Multica comment/status/metadata。
+- 未实际写入 Obsidian（只执行 `DRY_RUN=true`）。
+- crontab 状态来自既有交接，未在本阶段修改。
+
+### 提交记录
+
+- `9e0cf4c Define local Multica Loop operating protocol`
+- `2c7ff84 Add Loop intake gate for Multica-tracked tasks`
+- `041f3f1 Add Loop handoff generator for agent collaboration`
+- `3f1b8b4 Add Obsidian self-evolution sync workflow`
+- `83700af Record local adoption protocol report`
+
+### 结果
+
+本地使用规约已落地。所有新任务默认先进入 Multica 追踪，所有智能体交接使用 Loop handoff，所有执行完成后通过 Obsidian 同步沉淀到知识库。系统具备任务、协同、证据、回写、知识自进化的本地闭环。
