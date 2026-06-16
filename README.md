@@ -28,13 +28,14 @@ This repository is bootstrapping itself. The implemented MVP slice supports:
 - deterministic verify commands
 - retry prompt generation up to `agent.max_iterations`
 - cross-run local memory in `runs/index.jsonl` and `runs/LOOP_STATE.md`
-- `ai-loop status <run-id>`
+- `ai-loop status <run-id>` and `ai-loop status --latest`
 
 ## Quick start
 
 ```bash
 ./bin/ai-loop init
 ./bin/ai-loop discover --repo .
+./bin/ai-loop status --repo . --latest
 ./bin/ai-loop plan --repo . --task tasks/bootstrap-ai-loop.md --dry-run
 ./bin/ai-loop run --repo . --task tasks/bootstrap-ai-loop.md --dry-run
 ./bin/ai-loop-async start --repo . -- run --task tasks/bootstrap-ai-loop.md --dry-run

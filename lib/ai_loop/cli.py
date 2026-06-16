@@ -10,6 +10,7 @@ from .artifacts import read_json
 from .config import ConfigError, load_config
 from .discover import DiscoverError, DiscoverRequest, discover
 from .init_project import InitError, init_repo
+from .memory import read_index
 from .planner import PlanError, PlanRequest, plan
 from .runner import RunError, RunRequest, run
 
@@ -41,7 +42,8 @@ def build_parser() -> argparse.ArgumentParser:
     discover_parser.add_argument("--limit", type=int, default=20, help="Maximum recent runs to include")
 
     status_parser = subcommands.add_parser("status", help="Show run status")
-    status_parser.add_argument("run_id", help="Run id")
+    status_parser.add_argument("run_id", nargs="?", help="Run id")
+    status_parser.add_argument("--latest", action="store_true", help="Show the latest run from local memory")
     status_parser.add_argument("--repo", default=".", help="Repository path, defaults to current directory")
 
     return parser
@@ -132,7 +134,21 @@ def cmd_status(args: argparse.Namespace) -> int:
         print(f"status failed: {exc}", file=sys.stderr)
         return 3
     artifacts_root = repo / config.get("artifacts", {}).get("root", "runs")
-    run_path = artifacts_root / args.run_id / "run.json"
+    if args.latest and args.run_id:
+        print("status failed: pass either run_id or --latest, not both", file=sys.stderr)
+        return 2
+    if args.latest:
+        run_id = latest_run_id(artifacts_root)
+        if not run_id:
+            print(f"no runs found in local memory: {artifacts_root / 'index.jsonl'}", file=sys.stderr)
+            return 2
+    elif args.run_id:
+        run_id = args.run_id
+    else:
+        print("status failed: run_id is required unless --latest is used", file=sys.stderr)
+        return 2
+
+    run_path = artifacts_root / run_id / "run.json"
     if not run_path.exists():
         print(f"run not found: {run_path}", file=sys.stderr)
         return 2
@@ -145,9 +161,16 @@ def cmd_status(args: argparse.Namespace) -> int:
     print(f"iteration: {data.get('iteration')}/{data.get('max_iterations')}")
     print(f"workspace: {data.get('workspace')}")
     if data.get("plan_path"):
-        print(f"plan: {artifacts_root / args.run_id / data['plan_path']}")
-    print(f"summary: {artifacts_root / args.run_id / data.get('summary_path', 'summary.md')}")
+        print(f"plan: {artifacts_root / run_id / data['plan_path']}")
+    print(f"summary: {artifacts_root / run_id / data.get('summary_path', 'summary.md')}")
     return int(data.get("exit_code") or 0)
+
+
+def latest_run_id(artifacts_root: Path) -> str | None:
+    records = read_index(artifacts_root / "index.jsonl")
+    if not records:
+        return None
+    return str(records[-1].get("run_id") or "") or None
 
 
 def main(argv: list[str] | None = None) -> int:

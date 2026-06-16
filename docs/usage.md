@@ -173,6 +173,15 @@ cd /home/user/JAVA/ai/ai-loop
 
 `discover` 会读取目标仓库的 Git 工作区状态和 `runs/index.jsonl`，生成 `runs/discover.md`。它不会调用 Agent，不会修改源码，也会忽略 Loop 自己的 `runs/` 产物，适合在规划、dry-run、真实执行之前使用。
 
+查看最近一次本地 run 的状态：
+
+```bash
+cd /home/user/JAVA/ai/ai-loop
+./bin/ai-loop status --repo <target-repo> --latest
+```
+
+`--latest` 从 `runs/index.jsonl` 读取最近一次 run，不需要手动记住 run id。它和显式 `run_id` 互斥。
+
 ### 4.3 确认目标仓库干净
 
 真实执行前建议确认：
