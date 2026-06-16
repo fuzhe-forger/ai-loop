@@ -1333,3 +1333,49 @@ L2 项目记忆层已建立，FUZ-554 经验已沉淀为案例。下一步：选
 ### 结果
 
 Phase F（团队分享与复制）完成。Phase A-F 全部完成，AI 工作编排系统已可投入团队使用。下一步：选择试点项目验证端到端流程，或在实际项目中持续优化。
+
+## 2026-06-16：自动化增强
+
+### 目标
+
+在已有的治理基础上，引入 AI 辅助能力实现智能判断、自动规划、经验提取和记忆推荐。
+
+### 执行
+
+- 新增自动化增强模型文档：`docs/ai-work-orchestration/20-automation-enhancement.md`（402 行）。
+- 实现任务类型自动判断：`scripts/classify-task.sh`（支持 AI 或启发式，可降级）。
+- 实现自动生成执行计划：`scripts/generate-plan.sh`（基于 memory 上下文）。
+- 实现经验自动提取：`scripts/extract-experience.sh`（从 evidence 提取）。
+- 实现记忆自动推荐：`scripts/recommend-memory.sh`（基于相关度）。
+- 新增阶段报告：`docs/ai-work-orchestration/reports/2026-06-16-phase-58-automation-enhancement.md`。
+
+### 验证结果
+
+全部功能测试通过：
+
+- 任务分类：FUZ-554（返回 unknown + low confidence）
+- 执行计划：FUZ-554（生成完整 plan-draft，包含架构约束和验收偏好）
+- 经验提取：FUZ-554-scope-split-review（提取验证通过项）
+- 记忆推荐："evidence"（推荐相关案例 FUZ-554-evidence-chain.md）
+
+### 设计原则
+
+- 可选而非必需：不用 AI 系统仍可正常工作
+- 建议而非决策：AI 只提供建议，人做决策
+- 可审计而非黑盒：所有 AI 输出可追踪
+- 可降级而非依赖：AI 失败时自动降级到启发式或模板
+
+### 边界
+
+- 未实现真实 AI 模型调用（接口预留）。
+- 未实现向量搜索（使用全文搜索）。
+- 未实现自动化 reviewer 智能体。
+- 所有 AI 输出标记"需人工复核"。
+
+### 提交记录
+
+- `d33cc31 Complete Phase G automation enhancement`
+
+### 结果
+
+Phase G（自动化增强）完成。系统从"人工+门禁"升级到"AI 辅助+人工决策+门禁保护"。Phase A-G 全部完成，北极星目标达成 90%。下一步：接入真实 AI 模型，或在实际项目中持续优化启发式规则。
