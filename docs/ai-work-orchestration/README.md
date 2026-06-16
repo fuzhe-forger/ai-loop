@@ -35,6 +35,7 @@
 - `12-issue-metadata-contract.md`
 - `13-agent-crew-model.md`
 - `14-multica-loop-validation.md`
+- `15-project-memory-model.md`
 
 ### 2. 路线
 
@@ -110,6 +111,7 @@
 - Agent Crew 分享更新阶段报告：`reports/2026-06-16-phase-52-agent-crew-sharing.md`
 - Multica Loop 验证阶段报告：`reports/2026-06-16-phase-53-multica-loop-validation.md`
 - 技术分享彩排阶段报告：`reports/2026-06-16-phase-54-sharing-rehearsal.md`
+- 项目记忆阶段报告：`reports/2026-06-16-phase-55-project-memory.md`
 
 ## 使用方式
 

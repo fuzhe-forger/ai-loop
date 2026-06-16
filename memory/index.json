@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "project": "ai-loop",
+  "updated_at": "2026-06-16T08:00:00Z",
+  "constraints": [
+    {
+      "id": "C001",
+      "type": "architecture",
+      "title": "本地优先",
+      "file": "architecture-constraints.md",
+      "tags": ["local", "safety"]
+    },
+    {
+      "id": "C002",
+      "type": "architecture",
+      "title": "证据优先",
+      "file": "architecture-constraints.md",
+      "tags": ["evidence", "gate"]
+    },
+    {
+      "id": "C003",
+      "type": "architecture",
+      "title": "人控回写",
+      "file": "architecture-constraints.md",
+      "tags": ["writeback", "human-in-command"]
+    },
+    {
+      "id": "C004",
+      "type": "security",
+      "title": "不存密钥",
+      "file": "architecture-constraints.md",
+      "tags": ["security", "secret"]
+    }
+  ],
+  "decisions": [],
+  "pitfalls": [],
+  "preferences": [
+    {
+      "category": "code-style",
+      "file": "review-preferences.md",
+      "tags": ["bash", "python", "markdown"]
+    },
+    {
+      "category": "naming",
+      "file": "review-preferences.md",
+      "tags": ["kebab-case", "snake_case"]
+    },
+    {
+      "category": "documentation",
+      "file": "review-preferences.md",
+      "tags": ["help", "report", "design"]
+    },
+    {
+      "category": "testing",
+      "file": "review-preferences.md",
+      "tags": ["positive", "negative", "gate"]
+    },
+    {
+      "category": "commit",
+      "file": "review-preferences.md",
+      "tags": ["single-step", "clear-message", "no-mix"]
+    }
+  ],
+  "cases": [
+    {
+      "id": "CASE001",
+      "issue": "FUZ-554",
+      "title": "AI 工作编排证据链建设",
+      "file": "cases/FUZ-554-evidence-chain.md",
+      "type": "infrastructure",
+      "tags": ["evidence", "loop", "orchestration", "gate", "agent-crew"],
+      "status": "phase-c-completed",
+      "runs": 22
+    }
+  ]
+}
