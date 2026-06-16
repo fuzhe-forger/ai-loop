@@ -37,6 +37,9 @@
 - `14-multica-loop-validation.md`
 - `15-project-memory-model.md`
 - `16-controlled-writeback-policy.md`
+- `17-onboarding-guide.md`
+- `18-best-practices.md`
+- `19-training-materials.md`
 
 ### 2. 路线
 
@@ -114,6 +117,7 @@
 - 技术分享彩排阶段报告：`reports/2026-06-16-phase-54-sharing-rehearsal.md`
 - 项目记忆阶段报告：`reports/2026-06-16-phase-55-project-memory.md`
 - 受控回写阶段报告：`reports/2026-06-16-phase-56-controlled-writeback.md`
+- 团队分享与复制阶段报告：`reports/2026-06-16-phase-57-team-sharing.md`
 
 ## 使用方式
 
