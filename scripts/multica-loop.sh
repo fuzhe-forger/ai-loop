@@ -167,6 +167,7 @@ fi
 summary_path="runs/${actual_run_id}/summary.md"
 comment_path="runs/${actual_run_id}/multica-comment.md"
 stage_report_path="runs/${actual_run_id}/stage-report.md"
+writeback_summary_path="runs/${actual_run_id}/writeback-summary.md"
 mkdir -p "$(dirname "$comment_path")"
 cat > "$comment_path" <<COMMENT
 # Multica Comment Draft
@@ -320,6 +321,8 @@ COMMENT
 comment_written="false"
 status_written="false"
 status_write_value=""
+metadata_written="false"
+metadata_write_value="not-implemented"
 write_failed="false"
 write_error_path="runs/${actual_run_id}/multica-write-error.log"
 
@@ -354,6 +357,38 @@ if [[ -s "$write_error_path" ]]; then
   write_error_log="$write_error_path"
 fi
 
+cat > "$writeback_summary_path" <<WRITEBACK
+# Multica Loop Writeback Summary
+
+## Scope
+
+- Issue: ${issue_key}
+- Run ID: ${actual_run_id}
+- Comment draft: ${comment_path}
+- Metadata draft: ${metadata_json_path}
+
+## Remote Write Requests
+
+- Write comment requested: ${write_comment}
+- Write status requested: ${write_status}
+- Write metadata requested: false
+
+## Remote Write Results
+
+- Comment written: ${comment_written}
+- Status written: ${status_written}
+- Status write value: ${status_write_value}
+- Metadata written: ${metadata_written}
+- Metadata write value: ${metadata_write_value}
+- Write error log: ${write_error_log}
+
+## Policy Notes
+
+- Comment, status, and metadata are separate remote side effects.
+- Metadata remote write is not implemented in this phase.
+- This summary is generated even when no remote writes are requested.
+WRITEBACK
+
 cat > "$stage_report_path" <<REPORT
 # Multica Loop Stage Report
 
@@ -371,6 +406,7 @@ cat > "$stage_report_path" <<REPORT
 - Comment draft: ${comment_path}
 - State evaluation: ${state_json_path}
 - Metadata draft: ${metadata_json_path}
+- Writeback summary: ${writeback_summary_path}
 - Loop status: ${loop_status}
 - Error code: ${error_code}
 
@@ -393,6 +429,8 @@ cat > "$stage_report_path" <<REPORT
 - Write status requested: ${write_status}
 - Status written: ${status_written}
 - Status write value: ${status_write_value}
+- Write metadata requested: false
+- Metadata written: ${metadata_written}
 - Write error log: ${write_error_log}
 
 ## Next Step
@@ -401,6 +439,7 @@ If remote writes are approved later, the generated comment draft can be posted a
 REPORT
 
 echo "comment_written: ${comment_written}"
+echo "metadata_written: ${metadata_written}"
 if [[ -n "$status_write_value" ]]; then
   echo "status_written: ${status_write_value}"
 else
@@ -417,3 +456,4 @@ echo "run_id: $actual_run_id"
 echo "summary: $summary_path"
 echo "comment_draft: $comment_path"
 echo "stage_report: $stage_report_path"
+echo "writeback_summary: $writeback_summary_path"
