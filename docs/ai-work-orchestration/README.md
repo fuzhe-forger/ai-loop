@@ -40,6 +40,7 @@
 - `17-onboarding-guide.md`
 - `18-best-practices.md`
 - `19-training-materials.md`
+- `20-automation-enhancement.md`
 
 ### 2. 路线
 
@@ -118,6 +119,7 @@
 - 项目记忆阶段报告：`reports/2026-06-16-phase-55-project-memory.md`
 - 受控回写阶段报告：`reports/2026-06-16-phase-56-controlled-writeback.md`
 - 团队分享与复制阶段报告：`reports/2026-06-16-phase-57-team-sharing.md`
+- 自动化增强阶段报告：`reports/2026-06-16-phase-58-automation-enhancement.md`
 
 ## 使用方式
 
