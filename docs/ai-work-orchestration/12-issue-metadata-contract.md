@@ -26,6 +26,8 @@ Issue metadata 是 Multica Loop 的 L1 工作记忆。
 | `blocked_reason` | `missing_evidence: summary` | 阻塞原因，无阻塞时为空 |
 | `next_actor` | `reviewer` | 下一步角色 |
 | `state_reason` | `core evidence complete...` | 状态建议原因 |
+| `remote_write_completed` | `false` | 是否已有远端写入完成证据 |
+| `writeback_summary` | `runs/<run>/writeback-summary.md` | 写回证据路径 |
 | `updated_by` | `multica-loop-local` | metadata 来源 |
 | `updated_at` | `2026-06-16T00:00:00Z` | 本地生成时间 |
 
@@ -66,6 +68,8 @@ Issue metadata 是 Multica Loop 的 L1 工作记忆。
 | `state_reason` | `state-evaluation.json.reason` |
 | `strict_gate` | `evidence.json.checks.strict_gate` 或 verification report |
 | `blocked_reason` | `state-evaluation.json.reason`，仅当状态为 `blocked` |
+| `remote_write_completed` | `state-evaluation.json.checks.remote_write_completed` |
+| `writeback_summary` | `runs/<run-id>/writeback-summary.md` |
 
 ## JSON 草稿格式
 
@@ -81,6 +85,8 @@ Issue metadata 是 Multica Loop 的 L1 工作记忆。
     "blocked_reason": "",
     "next_actor": "reviewer",
     "state_reason": "core evidence complete and verification report present",
+    "remote_write_completed": false,
+    "writeback_summary": "runs/FUZ-554-scope-split-review/writeback-summary.md",
     "updated_by": "multica-loop-local",
     "updated_at": "2026-06-16T00:00:00Z"
   },
