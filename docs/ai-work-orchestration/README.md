@@ -57,6 +57,7 @@
 - Review packet metadata 报告：`reports/2026-06-15-phase-22-review-packet-metadata.md`
 - Stage review and commit prep 报告：`reports/2026-06-15-phase-23-stage-review-commit-prep.md`
 - Scope split review 报告：`reports/2026-06-15-phase-24-scope-split-review.md`
+- Multica Loop 重构设计：`08-multica-loop-refactor.md`
 
 ## 使用方式
 
