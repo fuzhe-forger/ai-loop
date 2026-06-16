@@ -39,6 +39,7 @@
 - `cases/FUZ-554/review-template.md`
 - `05-case-playbook.md`
 - `share/FUZ-554-one-page.md`
+- `share/README.md`
 - `share/tech-sharing-outline.md`
 - `share/demo-script.md`
 - `share/slide-deck.md`
@@ -65,6 +66,7 @@
 - Scope split review 报告：`reports/2026-06-15-phase-24-scope-split-review.md`
 - Multica Loop 重构设计：`08-multica-loop-refactor.md`
 - North Star 终局规划：`09-north-star.md`
+- 技术分享包总览：`share/README.md`
 - 技术分享大纲：`share/tech-sharing-outline.md`
 - 现场演示脚本：`share/demo-script.md`
 - PPT 页结构：`share/slide-deck.md`
