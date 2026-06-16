@@ -72,7 +72,31 @@ sed -n '1,120p' /tmp/fuz554-evidence.md
 - core evidence 是 `summary.md`、`stage-report.md`、`multica-comment.md`。
 - 这是从任务走向可复核事实的第一步。
 
-## 4. 跑 strict gate
+## 4. 刷新 state evidence
+
+执行：
+
+```bash
+./scripts/refresh-run-evidence.sh \
+  --pattern 'FUZ-554*' \
+  --issue FUZ-554 \
+  --output /tmp/fuz554-refresh.md
+```
+
+预期：
+
+```text
+Refreshed runs: 22
+Remote writes: false
+```
+
+讲法：
+
+- strict gate 只管 core evidence。
+- state evidence 让每个 run 都进入状态机和 metadata 链路。
+- refresh 只写本地 `runs/`，不写 Multica。
+
+## 5. 跑 strict + state gate
 
 执行：
 
@@ -81,25 +105,28 @@ sed -n '1,120p' /tmp/fuz554-evidence.md
   --case FUZ-554 \
   --pattern 'FUZ-554*' \
   --strict \
+  --state-gate \
   --output /tmp/fuz554-strict.md
 
-rg -n "Strict Evidence Gate|strict evidence gate passed" /tmp/fuz554-strict.md
+rg -n "Strict Evidence Gate|State Metadata Gate|state metadata gate passed" /tmp/fuz554-strict.md
 ```
 
 预期：
 
 ```text
 Strict Evidence Gate
-Local helper toolchain smoke checks and strict evidence gate passed.
+State Metadata Gate
+Local helper toolchain smoke checks, strict evidence gate, and state metadata gate passed.
 ```
 
 讲法：
 
 - strict gate 把证据完整性变成可执行检查。
 - 每个 run 都必须齐 `summary.md`、`stage-report.md`、`multica-comment.md`。
-- 这条线保证回写和分享不是凭感觉。
+- state gate 继续检查 `state-evaluation.*` 和 `metadata-draft.*`。
+- 这两条线保证回写和分享不是凭感觉。
 
-## 5. 准备 fallback
+## 6. 准备 fallback
 
 如果现场命令失败，不要现场修脚本，直接切到已生成材料：
 
@@ -116,7 +143,7 @@ runs/FUZ-554-scope-split-review/scope-split-report.md
 - 重点不是命令炫技，而是证明系统有可复核 artifact。
 - 这也符合 human in command：不在会场临时扩大变更。
 
-## 6. 最后确认讲述顺序
+## 7. 最后确认讲述顺序
 
 推荐顺序：
 
@@ -124,10 +151,10 @@ runs/FUZ-554-scope-split-review/scope-split-report.md
 2. 痛点：多 agent 工作如果没有治理，会变成散乱记录。
 3. 架构：Multica、Multica Loop、ai-loop、Agent Network、Artifacts & Memory。
 4. 案例：FUZ-554 从任务到 evidence 的闭环。
-5. 演示：collect evidence、strict gate、scope split。
+5. 演示：collect evidence、state refresh、strict + state gate、scope split。
 6. 路线：evidence 标准、状态机、项目记忆、团队模板。
 
-## 7. 会后动作
+## 8. 会后动作
 
 分享结束后只做三件事：
 

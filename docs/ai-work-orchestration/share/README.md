@@ -76,7 +76,7 @@
 用途：
 
 - 指导现场演示命令。
-- 演示 `collect-evidence`、`verify-toolchain --strict`、scope split 等稳定 artifacts。
+- 演示 `collect-evidence`、`refresh-run-evidence`、`verify-toolchain --strict --state-gate`、scope split 等稳定 artifacts。
 - 避免依赖 live coding。
 
 ### 7. 会前预检

@@ -73,9 +73,32 @@ sed -n '1,120p' /tmp/fuz554-evidence.md
 
 - AI 说完成不算，evidence 才算。
 - core evidence 是 summary、stage report、comment draft。
-- strict gate 可以阻止证据不完整的回写。
+- strict gate 可以阻止证据不完整的回写，state gate 可以确认状态和 metadata evidence 已生成。
 
-## Step 4：运行 strict gate
+## Step 4：刷新 state evidence
+
+执行：
+
+```bash
+./scripts/refresh-run-evidence.sh \
+  --pattern 'FUZ-554*' \
+  --issue FUZ-554 \
+  --output /tmp/fuz554-refresh.md
+```
+
+展示：
+
+```bash
+rg -n "Refreshed runs|Remote writes" /tmp/fuz554-refresh.md
+```
+
+讲三句话：
+
+- 每个 run 不只要有 summary，还要能进入状态机。
+- refresh 会生成 state evaluation 和 metadata draft。
+- 这一步只写本地 runs，不写 Multica。
+
+## Step 5：运行 strict + state gate
 
 执行：
 
@@ -84,22 +107,23 @@ sed -n '1,120p' /tmp/fuz554-evidence.md
   --case FUZ-554 \
   --pattern 'FUZ-554*' \
   --strict \
+  --state-gate \
   --output /tmp/fuz554-strict.md
 ```
 
 展示：
 
 ```bash
-rg -n "Strict Evidence Gate|strict evidence gate passed" /tmp/fuz554-strict.md
+rg -n "Strict Evidence Gate|State Metadata Gate|state metadata gate passed" /tmp/fuz554-strict.md
 ```
 
 讲三句话：
 
 - 这不是人工口头检查，是可执行 gate。
-- 每个 run 都必须有 core evidence。
+- 每个 run 都必须有 core evidence、state evidence、metadata draft。
 - 这让分享和回写有最低质量线。
 
-## Step 5：展示 scope split
+## Step 6：展示 scope split
 
 打开：
 
@@ -115,7 +139,7 @@ runs/FUZ-554-scope-split-review/scope-split-report.md
 
 注意：当前工作树已经完成拆分提交，所以这里展示的是“当时如何防止混合提交”的证据，不代表当前 git status。
 
-## Step 6：展示黑墙确认后的设计
+## Step 7：展示黑墙确认后的设计
 
 打开：
 
