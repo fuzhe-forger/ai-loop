@@ -1002,3 +1002,126 @@
 ### 结果
 
 当前本地 `FUZ-554*` run 共 22 个，22 个均具备 core evidence，16 个保留 `writeback-summary.md`。下一步需要人工选择提交策略。
+
+## 2026-06-16：Agent Crew Model
+
+### 目标
+
+定义机组角色模型，为"next_actor 映射到 assigned_actor"提供规范基础。
+
+### 执行
+
+- 新增 `docs/ai-work-orchestration/13-agent-crew-model.md`。
+- 定义 6 类机组角色：黑墙（调度）、顾实（执行）、裴衡（复核）、测真（验证）、简辞（记录）、人类（决策）。
+- 定义 `next_actor -> assigned_actor` 映射规则。
+- 新增阶段报告：`docs/ai-work-orchestration/reports/2026-06-16-phase-49-agent-crew-model.md`。
+
+### 验证
+
+- markdown 格式检查：PASSED
+- 无功能代码修改，无需运行测试。
+
+### 边界
+
+- 未读取或写入 Multica。
+- 未修改脚本逻辑。
+- 未动 `runs/` 本地证据。
+
+### 结果
+
+机组模型已定义，下一步补本地路由脚本。
+
+## 2026-06-16：Agent Crew Routing
+
+### 目标
+
+实现本地 `scripts/route-actor.sh`，把状态机输出的 `next_actor` 映射成具体 `assigned_actor`。
+
+### 执行
+
+- 新增 `scripts/route-actor.sh`。
+- 读取 `state-evaluation.json` 中的 `next_actor`。
+- 按 Agent Crew 模型映射到 `assigned_actor`。
+- 输出 JSON 和 Markdown。
+- 新增阶段报告：`docs/ai-work-orchestration/reports/2026-06-16-phase-50-agent-crew-routing.md`。
+
+### 验证
+
+- bash 语法检查：PASSED
+- 正向测试：`execution_agent -> 顾实`，`reviewer -> 裴衡`，`human -> 人类`
+- 负向测试：未知 `next_actor` 返回 `(unknown)`
+
+### 边界
+
+- 未读取或写入 Multica。
+- 未修改现有门禁脚本。
+- 未动 `runs/` 本地证据。
+
+### 结果
+
+路由脚本已可用，下一步让 metadata-draft 和 state gate 使用它。
+
+## 2026-06-16：Assigned Actor Gate
+
+### 目标
+
+让 `metadata-draft.sh` 调用 `route-actor.sh`，让 `verify-toolchain.sh --state-gate` 检查 `metadata.assigned_actor` 字段。
+
+### 执行
+
+- 更新 `scripts/metadata-draft.sh`，新增 `assigned_actor` 字段。
+- 更新 `scripts/verify-toolchain.sh`，`--state-gate` 检查 `metadata.assigned_actor` 是否存在。
+- 对 FUZ-554 现有 22 个 run 执行 `refresh-run-evidence.sh`。
+- 重新执行 `share-preflight.sh` 和 `verify-toolchain --strict --state-gate`。
+- 新增阶段报告：`docs/ai-work-orchestration/reports/2026-06-16-phase-51-assigned-actor-gate.md`。
+
+### 验证
+
+- 正向：FUZ-554 22 个 run 全部通过 `--strict --state-gate`。
+- review packet 显示 `Assigned Actor`。
+- 负向：构造缺少 `metadata.assigned_actor` 的临时 run，`--state-gate` 正确失败。
+
+### 边界
+
+- 未读取或写入 Multica。
+- 未 push、未 commit、未创建 MR。
+- 本地 `runs/` 证据已刷新，未纳入 git。
+
+### 结果
+
+状态门禁现在覆盖完整链路：`state-evaluation -> metadata-draft -> assigned_actor -> review packet`。下一步把机组路由补进技术分享。
+
+## 2026-06-16：Agent Crew Sharing Update
+
+### 目标
+
+把 Agent Crew 机组路由补进技术分享材料，让分享从"黑墙确认天道经验"继续落到"next_actor 如何映射到 assigned_actor"。
+
+### 执行
+
+- 在 `slide-deck.md` 新增 Slide 10：机组路由。
+- 在 `slides-content.md` 新增上屏内容页：从 `next_actor` 到 `assigned_actor`。
+- 在 `speaker-notes.md` 新增对应讲法和转场。
+- 在 `tech-sharing-outline.md` 新增"机组路由"章节，并顺延后续章节编号。
+- 新增阶段报告：`docs/ai-work-orchestration/reports/2026-06-16-phase-52-agent-crew-sharing.md`。
+
+### 验证
+
+- `git diff --check`：PASSED
+- `share-preflight.sh`：PASSED
+- `verify-toolchain --strict --state-gate`：PASSED
+
+### 边界
+
+- 未读取或写入 Multica。
+- 未 push、未创建 MR。
+- 未动 `runs/` 本地证据。
+
+### 提交记录
+
+- `a707e76 Add Agent Crew routing to sharing materials`
+- `ccdce49 Record Agent Crew sharing update report`
+
+### 结果
+
+分享材料现在覆盖完整叙事链：`天道经验 -> Agent Crew 机组模型 -> next_actor -> assigned_actor -> review packet`。
