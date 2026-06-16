@@ -36,6 +36,7 @@
 - `13-agent-crew-model.md`
 - `14-multica-loop-validation.md`
 - `15-project-memory-model.md`
+- `16-controlled-writeback-policy.md`
 
 ### 2. 路线
 
@@ -112,6 +113,7 @@
 - Multica Loop 验证阶段报告：`reports/2026-06-16-phase-53-multica-loop-validation.md`
 - 技术分享彩排阶段报告：`reports/2026-06-16-phase-54-sharing-rehearsal.md`
 - 项目记忆阶段报告：`reports/2026-06-16-phase-55-project-memory.md`
+- 受控回写阶段报告：`reports/2026-06-16-phase-56-controlled-writeback.md`
 
 ## 使用方式
 
