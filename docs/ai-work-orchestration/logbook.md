@@ -1204,3 +1204,47 @@ Multica Loop 组织层脚本已可用，完整链路验证通过：`task → dry
 ### 结果
 
 技术分享材料和彩排全部就绪，可进入正式分享。下一步：选择试点项目接入 Multica Loop，验证跨项目复用性。
+
+## 2026-06-16：项目记忆建设
+
+### 目标
+
+建立 L2 项目记忆层，让天道/黑墙经验和每次执行复盘沉淀成可查询、可复用的结构化知识。
+
+### 执行
+
+- 新增项目记忆模型文档：`docs/ai-work-orchestration/15-project-memory-model.md`。
+- 创建记忆存储结构：`memory/`。
+- 创建初始记忆文件：
+  - `architecture-constraints.md`：4 条架构约束（本地优先、证据优先、人控回写、不存密钥）
+  - `review-preferences.md`：5 类验收偏好（代码风格、命名规范、文档要求、测试要求、提交规范）
+  - `cases/FUZ-554-evidence-chain.md`：FUZ-554 完整经验案例
+- 创建记忆索引：`memory/index.json`。
+- 实现查询工具：`scripts/memory-query.sh`。
+- 新增阶段报告：`docs/ai-work-orchestration/reports/2026-06-16-phase-55-project-memory.md`。
+
+### 验证结果
+
+查询工具全部测试通过：
+
+- 列表查询：返回正确统计（4 约束、5 偏好、1 案例）
+- 类型查询：返回所有约束和案例
+- 标签过滤：正确过滤结果
+- ID 查询：返回单条记录
+- 全文搜索：返回匹配行和上下文
+
+### 边界
+
+- 未实现自动从 evidence 提取。
+- 未实现向量搜索。
+- 未实现跨项目记忆迁移。
+- 未实现 LLM 智能推荐。
+- MVP 只做文件化和命令行查询。
+
+### 提交记录
+
+- `694265d Build Phase D project memory layer`
+
+### 结果
+
+L2 项目记忆层已建立，FUZ-554 经验已沉淀为案例。下一步：选择试点项目接入 Multica Loop，在实际项目中补充决策记录和踩坑记录。
