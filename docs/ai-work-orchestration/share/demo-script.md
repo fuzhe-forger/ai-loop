@@ -15,6 +15,14 @@ git status -sb
 
 预期：除非有明确说明，否则工作树应干净或只包含已知草稿。
 
+当前可接受的已知草稿：
+
+```text
+tasks/FUZ-560-getSkuMaterialWarranties-loop-plan.md
+```
+
+讲法：这是另一条任务草稿，不纳入本次 FUZ-554 分享链路。
+
 ## Step 1：展示终局
 
 打开：
@@ -102,8 +110,10 @@ runs/FUZ-554-scope-split-review/scope-split-report.md
 讲三句话：
 
 - 工程系统不仅要证明做了什么，还要证明没有越界。
-- scope split 把 FUZ-554 包、核心代码包、其他任务草稿、本地 evidence 分开。
+- scope split 是提交前历史 artifact，当时用于把 FUZ-554 包、核心代码包、其他任务草稿、本地 evidence 分开。
 - 这就是 human in command 的体现。
+
+注意：当前工作树已经完成拆分提交，所以这里展示的是“当时如何防止混合提交”的证据，不代表当前 git status。
 
 ## Step 6：展示黑墙确认后的设计
 
