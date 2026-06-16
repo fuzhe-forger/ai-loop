@@ -1288,3 +1288,48 @@ L2 项目记忆层已建立，FUZ-554 经验已沉淀为案例。下一步：选
 ### 结果
 
 受控回写门禁已建立，可以开始集成到 multica-loop.sh 和其他回写场景。Phase E（受控回写与多角色协作）完成。下一步：选择试点项目验证端到端流程，或进入 Phase F 团队分享与复制。
+
+## 2026-06-16：团队分享与复制
+
+### 目标
+
+把 AI 工作编排实践整理成可演示、可培训、可复制的团队方法，支持全员接入 Multica Loop。
+
+### 执行
+
+- 新增接入指南：`docs/ai-work-orchestration/17-onboarding-guide.md`（348 行）。
+- 新增最佳实践：`docs/ai-work-orchestration/18-best-practices.md`（476 行）。
+- 新增培训材料：`docs/ai-work-orchestration/19-training-materials.md`（367 行）。
+- 检查分享材料完整性：slide-deck、speaker-notes、demo-script、FUZ-554-one-page 全部就绪。
+- 新增阶段报告：`docs/ai-work-orchestration/reports/2026-06-16-phase-57-team-sharing.md`。
+
+### 核心内容
+
+接入指南：
+- 快速开始（5 步）
+- 完整工作流（10 步）
+- 关键概念、常见问题、进阶使用
+
+最佳实践：
+- 4 大原则（先治理后自动化、先 Evidence 后智能调度、先本地后远端、先人控后策略自动化）
+- 3 类场景（文档更新、代码重构、生产热修复）
+- 4 种反模式（无证据完成、直接远端副作用、经验不沉淀、人工环节缺失）
+
+培训材料：
+- 75 分钟培训（理论 30 分钟 + 实战 30 分钟 + 答疑 15 分钟）
+- 培训效果评估（即时、实战、持续）
+
+### 边界
+
+- 未录制视频。
+- 未制作在线课程。
+- 未建立认证考试。
+- 未开发交互式教程。
+
+### 提交记录
+
+- `70c649b Complete Phase F team sharing and replication`
+
+### 结果
+
+Phase F（团队分享与复制）完成。Phase A-F 全部完成，AI 工作编排系统已可投入团队使用。下一步：选择试点项目验证端到端流程，或在实际项目中持续优化。
