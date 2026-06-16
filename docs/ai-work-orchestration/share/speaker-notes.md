@@ -130,11 +130,11 @@ Agent Network 是能力层，比如黑墙调度、顾实执行、裴衡审查、
 
 **讲法**：
 
-FUZ-554 是第一个完整案例。它证明了一条链路：从 Multica issue 到本地 task，从 dry-run/run 到 summary，从 patch summary 到 scope check，从 review packet 到 strict gate。
+FUZ-554 是第一个完整案例。它证明了一条链路：从 Multica issue 到本地 task，从 dry-run/run 到 summary，从 patch summary 到 scope check，从 review packet 到 strict gate、state gate。
 
 这里最重要的不是某个脚本，而是每一步都有 artifact。任务不是口头传递，执行不是口头完成，复核不是靠记忆。
 
-FUZ-554 当前有 22 个本地 run，22 个都有 core evidence，strict gate 通过。这说明它不只是一次实验，而是一条可复核证据链。
+FUZ-554 当前有 22 个本地 run，22 个都有 core evidence、state evaluation 和 metadata draft，strict gate 与 state gate 都通过。这说明它不只是一次实验，而是一条可复核证据链。
 
 **重点**：
 
@@ -180,14 +180,14 @@ AI 说完成不算，evidence 才算。
 
 这些工具的名字可以换，但门禁思想不能丢。
 
-`collect-evidence.sh` 用来把 run 目录收成结构化 evidence。`patch-summary.sh` 用来检查改动范围。`review-packet.sh` 给人一个复核入口。`verify-toolchain.sh --strict` 检查每个 run 是否具备 core evidence。
+`collect-evidence.sh` 用来把 run 目录收成结构化 evidence。`patch-summary.sh` 用来检查改动范围。`review-packet.sh` 给人一个复核入口。`verify-toolchain.sh --strict --state-gate` 检查每个 run 是否具备 core evidence、state evidence 和 metadata draft。`share-preflight.sh` 把分享前检查串成一个命令。
 
 这意味着“该不该继续”不再靠口头判断，而是可以跑命令、看结果、留 artifact。
 
 **重点**：
 
 - 工具是实现，gate 是方法论。
-- strict gate 是分享/回写前的最低质量线。
+- strict gate 是 core evidence 的最低质量线，state gate 是状态和 metadata evidence 的最低质量线。
 - scope check 是防越界提交的保护。
 
 **转场**：
@@ -248,7 +248,7 @@ AI 说完成不算，evidence 才算。
 
 **讲法**：
 
-演示分六步。先看 North Star，再看 FUZ-554 分享稿，然后跑 collect-evidence，再跑 strict gate，再看 scope split，最后看 Multica Loop 重构设计。
+演示分七步。先看 North Star，再看 FUZ-554 分享稿，然后跑 collect-evidence，再刷新 state evidence，跑 strict + state gate，再看 scope split，最后看 Multica Loop 重构设计。
 
 这不是为了证明模型现场能写代码，而是证明这套治理结构能稳定工作。
 

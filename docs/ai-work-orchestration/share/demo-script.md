@@ -48,7 +48,7 @@ docs/ai-work-orchestration/share/FUZ-554-one-page.md
 讲三句话：
 
 - FUZ-554 是第一个完整证据链案例。
-- 它覆盖 task、run、summary、stage report、comment draft、patch summary、review packet、strict gate。
+- 它覆盖 task、run、summary、stage report、comment draft、patch summary、review packet、strict gate、state gate。
 - 它证明我们能从 issue 走到可复核 artifacts。
 
 ## Step 3：现场收集 evidence

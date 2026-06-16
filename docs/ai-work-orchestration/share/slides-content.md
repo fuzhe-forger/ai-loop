@@ -117,12 +117,13 @@ Artifacts & Memory
 - run → summary / stage report
 - patch → scope check
 - review → review packet
-- strict gate → evidence completeness
+- strict gate → core evidence completeness
+- state gate → state + metadata evidence
 
 **数字**
 - 22 个本地 run
 - 22/22 core evidence 完整
-- strict gate 通过
+- strict gate + state gate 通过
 
 ---
 
@@ -156,11 +157,11 @@ Evidence 让 AI 工作可审计、可复核、可分享。
 - `collect-evidence.sh`：结构化证据
 - `patch-summary.sh`：改动范围
 - `review-packet.sh`：人工复核入口
-- `verify-toolchain.sh --strict`：证据完整性门禁
+- `verify-toolchain.sh --strict --state-gate`：证据与状态门禁
 
 **流程**
 ```text
-Collect → Summarize → Review → Gate → Human Decision
+Collect → Summarize → Review → Strict Gate → State Gate → Human Decision
 ```
 
 ---
@@ -212,7 +213,7 @@ Collect → Summarize → Review → Gate → Human Decision
 1. 看 North Star
 2. 看 FUZ-554 一页稿
 3. 跑 `collect-evidence`
-4. 跑 `verify-toolchain --strict`
+4. 跑 `share-preflight.sh` 或 `verify-toolchain --strict --state-gate`
 5. 看 scope split
 6. 看 Multica Loop 重构设计
 

@@ -30,6 +30,8 @@
 8. 代码改动准入：为 patch summary 增加 scope check，识别是否超出允许路径。
 9. 复核包增强：让 review packet 纳入 patch summary 和 scope check 结果。
 10. Strict Evidence Gate：为 `verify-toolchain.sh` 增加 `--strict`，缺少 core evidence 时直接失败。
+11. State Metadata Gate：增加 `--state-gate`，缺少 state evaluation 或 metadata draft 时失败。
+12. Share Preflight：增加 `share-preflight.sh`，一键生成刷新报告、验证报告和 review packet。
 
 ## 产出了什么
 
@@ -45,7 +47,7 @@
 
 ## 证据状态
 
-截至 Strict Evidence Gate 阶段，`FUZ-554` 已有 17 个 run，全部具备 core evidence：
+截至 State Metadata Gate 阶段，`FUZ-554` 已有 22 个 run，全部具备 core evidence、state evaluation 和 metadata draft：
 
 - `summary.md`
 - `stage-report.md`
@@ -62,7 +64,8 @@
 - Evidence：`evidence-checklist.sh` 和 `evidence-index.sh` 用于检查单 run 与多 run 证据完整度；evidence index 已包含生成时间、pattern 和排序说明。
 - Review：`review-packet.sh` 汇总案例证据，并可通过 `--include-patch-summary` 引用 patch summary；review packet 已包含生成时间、pattern 和排序说明。
 - Patch：`patch-summary.sh` 生成改动摘要，并支持 `--allow-prefix` 做 scope check。
-- Gate：`verify-toolchain.sh --strict` 对匹配 run 执行 core evidence 准入检查。
+- Gate：`verify-toolchain.sh --strict --state-gate` 对匹配 run 执行 core evidence 和 state metadata 准入检查。
+- Preflight：`share-preflight.sh` 一键执行 refresh、verify、review packet。
 
 ## 人类控制点
 
@@ -72,7 +75,7 @@
 - comment/status 写入必须人工确认或遵循明确 standing policy。
 - 状态同步不由脚本自动判断业务完成。
 - review packet 只辅助判断，不代表自动批准。
-- strict gate 只证明 core evidence 齐全，不替代业务复核。
+- strict gate 只证明 core evidence 齐全，state gate 只证明状态/metadata evidence 齐全，都不替代业务复核。
 
 ## 可复用价值
 
@@ -87,4 +90,4 @@
 建议进入两条线：
 
 1. 选择下一个真实低风险代码任务，优先验证 evidence index 的排序/生成说明，继续保持本地可验证、低副作用。
-2. 把本分享稿作为团队内部第一次同步材料，收集团队对边界、证据、状态策略和 strict gate 的反馈。
+2. 把本分享稿作为团队内部第一次同步材料，收集团队对边界、证据、状态策略、strict gate 和 state gate 的反馈。

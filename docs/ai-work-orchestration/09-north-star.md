@@ -15,7 +15,7 @@
 2. 系统判断任务类型、风险和是否需要追问
 3. 自动生成本地 task.md 和执行计划
 4. ai-loop 在本地隔离环境执行
-5. 自动收集 evidence：summary / patch / test / review packet / strict gate
+5. 自动收集 evidence：summary / patch / test / review packet / strict gate / state gate
 6. reviewer 智能体基于 evidence 给出 approve 或 request changes
 7. 系统生成 Multica comment draft 和 status 建议
 8. 人确认后才写回远端
@@ -70,7 +70,7 @@ Artifacts & Memory：知识沉淀层
 - 所有代码改动走本地 worktree。
 - 所有结果必须有 verify 命令或人工复核证据。
 - patch summary 和 scope check 阻止越界改动。
-- strict gate 阻止证据不完整的回写。
+- strict gate 阻止 core evidence 不完整的回写，state gate 阻止状态和 metadata evidence 缺失的复核。
 
 ### 4. 结构化证据
 
@@ -122,7 +122,7 @@ Artifacts & Memory：知识沉淀层
 
 目标：单个 issue 可以安全进入本地 ai-loop，并生成完整证据。
 
-已基本完成：FUZ-554 证明了 task、run、evidence、review packet、strict gate 的链路。
+已基本完成：FUZ-554 证明了 task、run、evidence、review packet、strict gate、state gate、share preflight 的链路。
 
 ### Phase B：结构化 evidence 标准
 

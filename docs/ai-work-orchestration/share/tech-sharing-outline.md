@@ -89,7 +89,7 @@ Multica Issue
 
 - `FUZ-554*` 本地 run：22 个。
 - core evidence：22/22 完整。
-- strict gate：通过。
+- strict gate + state gate：通过。
 
 ## 5. 黑墙确认：天道不是代码，是编排经验
 
@@ -113,7 +113,8 @@ Multica Issue
 - `scripts/collect-evidence.sh`：结构化 evidence JSON/Markdown。
 - `scripts/patch-summary.sh`：改动范围和 scope check。
 - `scripts/review-packet.sh`：人工复核入口。
-- `scripts/verify-toolchain.sh --strict`：core evidence gate。
+- `scripts/verify-toolchain.sh --strict --state-gate`：core evidence + state metadata gate。
+- `scripts/share-preflight.sh`：分享前一键预检。
 
 强调：
 
@@ -146,7 +147,7 @@ Multica Issue
 2. 打开 `FUZ-554-one-page.md`。
 3. 运行 `collect-evidence`。
 4. 打开生成的 `evidence.md`。
-5. 运行 `verify-toolchain --strict`。
+5. 运行 `share-preflight.sh` 或 `verify-toolchain --strict --state-gate`。
 6. 展示 scope split report。
 
 ## 10. 结束语

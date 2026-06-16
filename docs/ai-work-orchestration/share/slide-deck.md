@@ -129,7 +129,8 @@ Artifacts & Memory
 - dry-run / run → summary
 - patch summary → scope check
 - review packet → human review
-- strict gate → evidence completeness
+- strict gate → core evidence completeness
+- state gate → state + metadata evidence
 
 **建议画面**：
 ```text
@@ -138,7 +139,7 @@ FUZ-554
   → run
   → evidence
   → review packet
-  → strict gate
+  → strict gate + state gate
   → share packet
 ```
 
@@ -179,11 +180,11 @@ Optional evidence：
 - `collect-evidence.sh`：收集结构化证据。
 - `patch-summary.sh`：检查改动范围。
 - `review-packet.sh`：给人看的复核入口。
-- `verify-toolchain.sh --strict`：证据完整性门禁。
+- `verify-toolchain.sh --strict --state-gate`：证据与状态门禁。
 
 **建议画面**：
 ```text
-collect → summarize → review → strict gate → human decision
+collect → summarize → review → strict gate → state gate → human decision
 ```
 
 **讲者备注**：
@@ -243,7 +244,7 @@ collect → summarize → review → strict gate → human decision
 1. 看 North Star。
 2. 看 FUZ-554 分享稿。
 3. 跑 `collect-evidence`。
-4. 跑 `verify-toolchain --strict`。
+4. 跑 `share-preflight.sh` 或 `verify-toolchain --strict --state-gate`。
 5. 看 scope split。
 6. 看 Multica Loop 重构设计。
 
