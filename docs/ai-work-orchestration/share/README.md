@@ -88,6 +88,7 @@
 用途：
 
 - 分享前 10 分钟确认材料、命令、fallback。
+- 优先使用 `scripts/share-preflight.sh` 一键生成 refresh、verification、review packet。
 - 避免把无关草稿混进本次分享。
 - 现场命令失败时切到历史 evidence。
 

@@ -4,6 +4,28 @@
 
 在正式分享前，用 10 分钟确认材料、命令、证据和 fallback 都可用，避免现场依赖临时判断。
 
+## 0. 一键预检
+
+优先执行：
+
+```bash
+./scripts/share-preflight.sh \
+  --case FUZ-554 \
+  --pattern 'FUZ-554*' \
+  --output-dir /tmp/fuz554-share-preflight
+```
+
+预期生成：
+
+```text
+/tmp/fuz554-share-preflight/refresh-report.md
+/tmp/fuz554-share-preflight/verification-report.md
+/tmp/fuz554-share-preflight/review-packet.md
+/tmp/fuz554-share-preflight/share-preflight-summary.md
+```
+
+后续步骤是这条一键命令的拆解版，适合现场分步演示。
+
 ## 1. 打开材料
 
 按顺序准备这些文件：
