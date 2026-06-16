@@ -8,10 +8,11 @@
 2. `00-vision.md`：为什么要做这件事。
 3. `01-domain-model.md`：项目、issue、run、evidence、policy 的关系。
 4. `10-evidence-standard.md`：AI 工作证据包的正式标准。
-5. `03-sharing-roadmap.md`：怎么讲给团队听、怎么分阶段分享。
-6. `05-case-playbook.md`：低风险案例怎么执行。
-7. `cases/FUZ-554/README.md`：第一个可复盘案例。
-8. `reports/`：每个阶段的正式报告。
+5. `11-loop-state-machine.md`：Multica Loop 状态推进规则。
+6. `03-sharing-roadmap.md`：怎么讲给团队听、怎么分阶段分享。
+7. `05-case-playbook.md`：低风险案例怎么执行。
+8. `cases/FUZ-554/README.md`：第一个可复盘案例。
+9. `reports/`：每个阶段的正式报告。
 
 ## 当前阶段
 
@@ -28,6 +29,7 @@
 - `00-vision.md`
 - `01-domain-model.md`
 - `10-evidence-standard.md`
+- `11-loop-state-machine.md`
 
 ### 2. 路线
 
@@ -71,6 +73,7 @@
 - Multica Loop 重构设计：`08-multica-loop-refactor.md`
 - North Star 终局规划：`09-north-star.md`
 - Evidence 标准：`10-evidence-standard.md`
+- Multica Loop 状态机：`11-loop-state-machine.md`
 - 技术分享包总览：`share/README.md`
 - 技术分享大纲：`share/tech-sharing-outline.md`
 - 现场演示脚本：`share/demo-script.md`
@@ -80,6 +83,7 @@
 - 会前预检清单：`share/preflight-checklist.md`
 - 会前预检阶段报告：`reports/2026-06-16-phase-33-preflight-checklist.md`
 - Evidence 标准阶段报告：`reports/2026-06-16-phase-34-evidence-standard.md`
+- 状态机阶段报告：`reports/2026-06-16-phase-35-loop-state-machine.md`
 
 ## 使用方式
 
