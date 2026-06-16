@@ -263,6 +263,8 @@ REPORT
 ./scripts/evaluate-state.sh --issue "$issue_key" --run-id "$actual_run_id" --write-run >/dev/null
 state_json_path="runs/${actual_run_id}/state-evaluation.json"
 state_markdown_path="runs/${actual_run_id}/state-evaluation.md"
+metadata_json_path="runs/${actual_run_id}/metadata-draft.json"
+metadata_markdown_path="runs/${actual_run_id}/metadata-draft.md"
 loop_suggested_state="$(python3 - <<'PY' "$state_json_path"
 import json, sys
 with open(sys.argv[1], encoding='utf-8') as fh:
@@ -284,6 +286,11 @@ with open(sys.argv[1], encoding='utf-8') as fh:
 print(data.get('reason') or 'unknown')
 PY
 )"
+./scripts/metadata-draft.sh \
+  --issue "$issue_key" \
+  --run-id "$actual_run_id" \
+  --output "$metadata_json_path" \
+  --markdown "$metadata_markdown_path" >/dev/null
 
 cat > "$comment_path" <<COMMENT
 # Multica Comment Draft
@@ -295,6 +302,7 @@ cat > "$comment_path" <<COMMENT
 - Result: generated locally; remote writes require explicit flags
 - Suggested Loop state: ${loop_suggested_state}
 - Next actor: ${loop_next_actor}
+- Metadata draft: ${metadata_markdown_path}
 
 ## Summary
 
@@ -306,6 +314,7 @@ See: ${summary_path}
 - Next actor: ${loop_next_actor}
 - Reason: ${loop_state_reason}
 - State evidence: ${state_markdown_path}
+- Metadata draft: ${metadata_markdown_path}
 COMMENT
 
 comment_written="false"
@@ -361,6 +370,7 @@ cat > "$stage_report_path" <<REPORT
 - Summary: ${summary_path}
 - Comment draft: ${comment_path}
 - State evaluation: ${state_json_path}
+- Metadata draft: ${metadata_json_path}
 - Loop status: ${loop_status}
 - Error code: ${error_code}
 
