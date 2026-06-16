@@ -104,6 +104,7 @@
 - 分享预检一键脚本阶段报告：`reports/2026-06-16-phase-47-share-preflight-script.md`
 - 分享口径统一阶段报告：`reports/2026-06-16-phase-48-sharing-narrative-sync.md`
 - Agent Crew 机组模型阶段报告：`reports/2026-06-16-phase-49-agent-crew-model.md`
+- Agent Crew 路由阶段报告：`reports/2026-06-16-phase-50-agent-crew-routing.md`
 
 ## 使用方式
 
