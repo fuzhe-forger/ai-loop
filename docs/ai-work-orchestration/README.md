@@ -93,6 +93,7 @@
 - Issue Metadata 草稿阶段报告：`reports/2026-06-16-phase-39-issue-metadata-draft.md`
 - Comment 引用 metadata 草稿阶段报告：`reports/2026-06-16-phase-40-comment-metadata-reference.md`
 - Writeback summary 策略阶段报告：`reports/2026-06-16-phase-41-writeback-summary-policy.md`
+- Writeback 状态判定阶段报告：`reports/2026-06-16-phase-42-writeback-state-detection.md`
 
 ## 使用方式
 
