@@ -3,7 +3,7 @@ set -euo pipefail
 
 show_help() {
   cat <<'HELP'
-Usage: scripts/verify-toolchain.sh [--case <case-id>] [--pattern <glob>] [--strict] [--output <file>]
+Usage: scripts/verify-toolchain.sh [--case <case-id>] [--pattern <glob>] [--strict] [--state-gate] [--output <file>]
 
 Run local-only smoke checks for the Multica × ai-loop helper scripts.
 
@@ -11,6 +11,8 @@ Options:
   --case     Case identifier, default: FUZ-554
   --pattern  Run glob pattern under runs/, default: '<case>*'
   --strict   Require every matched run to include core evidence files
+  --state-gate
+             Require every matched run to include state and metadata evidence
   --output   Optional file path to write the verification report
   --list-checks
              List the local smoke checks and exit without reading runs/
@@ -38,12 +40,12 @@ show_checks() {
 - ./scripts/collect-evidence.sh --issue <case-id> --run-id <sample-run>
 - ./scripts/evaluate-state.sh --issue <case-id> --run-id <sample-run>
 - ./scripts/metadata-draft.sh --issue <case-id> --run-id <sample-run>
-- ./scripts/refresh-run-evidence.sh --issue <case-id> --pattern <sample-run>
+- ./scripts/refresh-run-evidence.sh --help
 - ./scripts/patch-summary.sh --help
 - ./scripts/evidence-checklist.sh --run-id <sample-run>
 - ./scripts/evidence-index.sh --pattern <pattern>
 - ./scripts/review-packet.sh --case <case-id> --pattern <pattern>
-- ./scripts/verify-toolchain.sh --case <case-id> --pattern <pattern> --strict
+- ./scripts/verify-toolchain.sh --case <case-id> --pattern <pattern> --strict --state-gate
 
 This list is local-only. It does not read Multica and never performs remote writes.
 HELP
@@ -54,6 +56,7 @@ pattern=""
 output=""
 list_checks="false"
 strict="false"
+state_gate="false"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -65,6 +68,8 @@ while [[ $# -gt 0 ]]; do
       output="${2:-}"; shift 2 ;;
     --strict)
       strict="true"; shift ;;
+    --state-gate)
+      state_gate="true"; shift ;;
     --list-checks)
       list_checks="true"; shift ;;
     -h|--help)
@@ -126,7 +131,7 @@ run_check "multica-loop --policy-help" ./scripts/multica-loop.sh --policy-help
 run_check "collect-evidence" ./scripts/collect-evidence.sh --issue "$case_id" --run-id "$first_run"
 run_check "evaluate-state" ./scripts/evaluate-state.sh --issue "$case_id" --run-id "$first_run"
 run_check "metadata-draft" ./scripts/metadata-draft.sh --issue "$case_id" --run-id "$first_run"
-run_check "refresh-run-evidence" ./scripts/refresh-run-evidence.sh --issue "$case_id" --pattern "$first_run"
+run_check "refresh-run-evidence --help" ./scripts/refresh-run-evidence.sh --help
 run_check "patch-summary --help" ./scripts/patch-summary.sh --help
 run_check "evidence-checklist" ./scripts/evidence-checklist.sh --run-id "$first_run"
 run_check "evidence-index" ./scripts/evidence-index.sh --pattern "$pattern"
@@ -157,6 +162,31 @@ if [[ "$strict" == "true" ]]; then
   done
 fi
 
+state_rows=""
+state_fail_count=0
+if [[ "$state_gate" == "true" ]]; then
+  for run_dir in "${run_dirs[@]}"; do
+    if [[ ! -d "$run_dir" ]]; then
+      continue
+    fi
+    run_id="$(basename "$run_dir")"
+    missing=()
+    for required_file in state-evaluation.json state-evaluation.md metadata-draft.json metadata-draft.md; do
+      if [[ ! -s "$run_dir/$required_file" ]]; then
+        missing+=("$required_file")
+      fi
+    done
+    if [[ ${#missing[@]} -eq 0 ]]; then
+      state_rows+="| ${run_id} | PASSED | |"
+    else
+      state_fail_count=$((state_fail_count + 1))
+      missing_text="$(IFS=,; printf '%s' "${missing[*]}")"
+      state_rows+="| ${run_id} | FAILED | ${missing_text} |"
+    fi
+    state_rows+=$'\n'
+  done
+fi
+
 report="# Toolchain Verification: ${case_id}
 
 ## Scope
@@ -165,6 +195,7 @@ report="# Toolchain Verification: ${case_id}
 - Pattern: runs/${pattern}
 - Sample run: ${first_run}
 - Strict evidence gate: ${strict}
+- State metadata gate: ${state_gate}
 - Network access: false
 - Remote writes: false
 
@@ -188,11 +219,28 @@ if [[ "$strict" == "true" ]]; then
 ${strict_rows}"
 fi
 
+if [[ "$state_gate" == "true" ]]; then
+  report+="
+## State Metadata Gate
+
+| Run | Result | Missing State Evidence |
+|---|---|---|
+${state_rows}"
+fi
+
 conclusion="Local helper toolchain smoke checks passed."
 if [[ "$strict" == "true" && "$strict_fail_count" -gt 0 ]]; then
   conclusion="Local helper toolchain smoke checks passed, but strict evidence gate failed for ${strict_fail_count} run(s)."
+elif [[ "$state_gate" == "true" && "$state_fail_count" -gt 0 ]]; then
+  conclusion="Local helper toolchain smoke checks passed, but state metadata gate failed for ${state_fail_count} run(s)."
 elif [[ "$strict" == "true" ]]; then
   conclusion="Local helper toolchain smoke checks and strict evidence gate passed."
+fi
+
+if [[ "$strict" == "true" && "$strict_fail_count" -eq 0 && "$state_gate" == "true" && "$state_fail_count" -eq 0 ]]; then
+  conclusion="Local helper toolchain smoke checks, strict evidence gate, and state metadata gate passed."
+elif [[ "$strict" == "false" && "$state_gate" == "true" && "$state_fail_count" -eq 0 ]]; then
+  conclusion="Local helper toolchain smoke checks and state metadata gate passed."
 fi
 
 report+="
@@ -210,5 +258,9 @@ else
 fi
 
 if [[ "$strict" == "true" && "$strict_fail_count" -gt 0 ]]; then
+  exit 1
+fi
+
+if [[ "$state_gate" == "true" && "$state_fail_count" -gt 0 ]]; then
   exit 1
 fi
