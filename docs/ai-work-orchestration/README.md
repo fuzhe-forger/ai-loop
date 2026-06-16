@@ -99,6 +99,7 @@
 - State metadata gate 阶段报告：`reports/2026-06-16-phase-45-state-metadata-gate.md`
 - 分享预检 state gate 阶段报告：`reports/2026-06-16-phase-46-sharing-preflight-state-gate.md`
 - 分享预检一键脚本阶段报告：`reports/2026-06-16-phase-47-share-preflight-script.md`
+- 分享口径统一阶段报告：`reports/2026-06-16-phase-48-sharing-narrative-sync.md`
 
 ## 使用方式
 
