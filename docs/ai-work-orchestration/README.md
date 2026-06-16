@@ -34,6 +34,7 @@
 - `11-loop-state-machine.md`
 - `12-issue-metadata-contract.md`
 - `13-agent-crew-model.md`
+- `14-multica-loop-validation.md`
 
 ### 2. 路线
 
@@ -107,6 +108,7 @@
 - Agent Crew 路由阶段报告：`reports/2026-06-16-phase-50-agent-crew-routing.md`
 - Assigned Actor Gate 阶段报告：`reports/2026-06-16-phase-51-assigned-actor-gate.md`
 - Agent Crew 分享更新阶段报告：`reports/2026-06-16-phase-52-agent-crew-sharing.md`
+- Multica Loop 验证阶段报告：`reports/2026-06-16-phase-53-multica-loop-validation.md`
 
 ## 使用方式
 
@@ -117,3 +119,5 @@
 - 通用规则放在编号文档中
 
 这样团队成员可以先看总入口，再进入具体阶段和案例，不会被零散文件打散。
+- 当前重点：把真实低风险任务、证据门禁、Agent Crew 路由、Multica Loop 组织层和分享材料串成可复核阶段包
+- 当前案例：`FUZ-554` 已完成 Phase 52 Agent Crew sharing update；Multica Loop 组织层已完成 Phase 53 验证；当前本地 `FUZ-554*` run 共 22 个，全部具备 core evidence
