@@ -10,10 +10,11 @@
 4. `10-evidence-standard.md`：AI 工作证据包的正式标准。
 5. `11-loop-state-machine.md`：Multica Loop 状态推进规则。
 6. `12-issue-metadata-contract.md`：issue 级工作记忆字段合约。
-7. `03-sharing-roadmap.md`：怎么讲给团队听、怎么分阶段分享。
-8. `05-case-playbook.md`：低风险案例怎么执行。
-9. `cases/FUZ-554/README.md`：第一个可复盘案例。
-10. `reports/`：每个阶段的正式报告。
+7. `13-agent-crew-model.md`：Agent Crew 机组角色与路由模型。
+8. `03-sharing-roadmap.md`：怎么讲给团队听、怎么分阶段分享。
+9. `05-case-playbook.md`：低风险案例怎么执行。
+10. `cases/FUZ-554/README.md`：第一个可复盘案例。
+11. `reports/`：每个阶段的正式报告。
 
 ## 当前阶段
 
@@ -32,6 +33,7 @@
 - `10-evidence-standard.md`
 - `11-loop-state-machine.md`
 - `12-issue-metadata-contract.md`
+- `13-agent-crew-model.md`
 
 ### 2. 路线
 
@@ -77,6 +79,7 @@
 - Evidence 标准：`10-evidence-standard.md`
 - Multica Loop 状态机：`11-loop-state-machine.md`
 - Issue Metadata 合约：`12-issue-metadata-contract.md`
+- Agent Crew 机组模型：`13-agent-crew-model.md`
 - 技术分享包总览：`share/README.md`
 - 技术分享大纲：`share/tech-sharing-outline.md`
 - 现场演示脚本：`share/demo-script.md`
