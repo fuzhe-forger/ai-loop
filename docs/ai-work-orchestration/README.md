@@ -91,6 +91,7 @@
 - 状态 evidence 与 review packet 阶段报告：`reports/2026-06-16-phase-37-state-review-packet.md`
 - Comment 状态建议阶段报告：`reports/2026-06-16-phase-38-comment-state-recommendation.md`
 - Issue Metadata 草稿阶段报告：`reports/2026-06-16-phase-39-issue-metadata-draft.md`
+- Comment 引用 metadata 草稿阶段报告：`reports/2026-06-16-phase-40-comment-metadata-reference.md`
 
 ## 使用方式
 
