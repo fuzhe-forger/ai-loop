@@ -231,6 +231,83 @@ else
   esac
 fi
 
+cat > "$stage_report_path" <<REPORT
+# Multica Loop Stage Report
+
+## Input
+
+- Issue: ${issue_key}
+- Title: ${issue_title}
+- Repo: ${repo}
+- Run ID: ${actual_run_id}
+
+## Output
+
+- Task: ${task_path}
+- Summary: ${summary_path}
+- Comment draft: ${comment_path}
+- Loop status: ${loop_status}
+- Error code: ${error_code}
+
+## Status Mapping
+
+- Status policy: ${status_policy}
+- Mapped status: ${next_status}
+- Mapping reason: ${status_reason}
+
+## Remote Writes
+
+- Pending final writeback decision: true
+REPORT
+
+./scripts/evaluate-state.sh --issue "$issue_key" --run-id "$actual_run_id" --write-run >/dev/null
+state_json_path="runs/${actual_run_id}/state-evaluation.json"
+state_markdown_path="runs/${actual_run_id}/state-evaluation.md"
+loop_suggested_state="$(python3 - <<'PY' "$state_json_path"
+import json, sys
+with open(sys.argv[1], encoding='utf-8') as fh:
+    data = json.load(fh)
+print(data.get('to') or 'unknown')
+PY
+)"
+loop_next_actor="$(python3 - <<'PY' "$state_json_path"
+import json, sys
+with open(sys.argv[1], encoding='utf-8') as fh:
+    data = json.load(fh)
+print(data.get('required_next_actor') or 'unknown')
+PY
+)"
+loop_state_reason="$(python3 - <<'PY' "$state_json_path"
+import json, sys
+with open(sys.argv[1], encoding='utf-8') as fh:
+    data = json.load(fh)
+print(data.get('reason') or 'unknown')
+PY
+)"
+
+cat > "$comment_path" <<COMMENT
+# Multica Comment Draft
+
+- Issue: ${issue_key}
+- Title: ${issue_title}
+- AI Loop Run: ${actual_run_id}
+- Mode: dry-run
+- Result: generated locally; remote writes require explicit flags
+- Suggested Loop state: ${loop_suggested_state}
+- Next actor: ${loop_next_actor}
+
+## Summary
+
+See: ${summary_path}
+
+## Loop State Recommendation
+
+- State: ${loop_suggested_state}
+- Next actor: ${loop_next_actor}
+- Reason: ${loop_state_reason}
+- State evidence: ${state_markdown_path}
+COMMENT
+
 comment_written="false"
 status_written="false"
 status_write_value=""
@@ -283,8 +360,15 @@ cat > "$stage_report_path" <<REPORT
 - Task: ${task_path}
 - Summary: ${summary_path}
 - Comment draft: ${comment_path}
+- State evaluation: ${state_json_path}
 - Loop status: ${loop_status}
 - Error code: ${error_code}
+
+## Loop State Recommendation
+
+- Suggested state: ${loop_suggested_state}
+- Next actor: ${loop_next_actor}
+- Reason: ${loop_state_reason}
 
 ## Status Mapping
 
