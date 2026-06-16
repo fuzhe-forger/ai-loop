@@ -79,6 +79,18 @@
 - 演示 `collect-evidence`、`verify-toolchain --strict`、scope split 等稳定 artifacts。
 - 避免依赖 live coding。
 
+### 7. 会前预检
+
+阅读：
+
+- `preflight-checklist.md`
+
+用途：
+
+- 分享前 10 分钟确认材料、命令、fallback。
+- 避免把无关草稿混进本次分享。
+- 现场命令失败时切到历史 evidence。
+
 ## 分享主线
 
 一句话：
@@ -101,8 +113,9 @@ Artifacts & Memory：知识沉淀层
 2. 用 `FUZ-554-one-page.md` 讲案例。
 3. 用 `slide-deck.md` 做主 PPT。
 4. 用 `speaker-notes.md` 控制讲法。
-5. 按 `demo-script.md` 做 5–8 分钟稳定演示。
-6. 最后落到下一步：evidence 标准、Multica Loop 状态机、项目记忆。
+5. 用 `preflight-checklist.md` 做会前确认。
+6. 按 `demo-script.md` 做 5–8 分钟稳定演示。
+7. 最后落到下一步：evidence 标准、Multica Loop 状态机、项目记忆。
 
 ## 不建议怎么讲
 
@@ -123,9 +136,10 @@ Artifacts & Memory：知识沉淀层
 | Slide deck structure | ready | 可转 PPT |
 | Slides content | ready | 可直接制作 PPT 的上屏内容 |
 | Speaker notes | ready | 可排练讲稿 |
+| Preflight checklist | ready | 会前材料、命令、fallback 检查 |
 
 ## 下一步
 
-- 如果要正式对外/对团队分享：制作 PPT。
+- 如果要正式对外/对团队分享：先按 `preflight-checklist.md` 预检，再制作 PPT。
 - 如果要内部试讲：按 `speaker-notes.md` + `demo-script.md` 彩排。
 - 如果要继续工程推进：优先做 Multica Loop 状态机和 evidence 标准化。
