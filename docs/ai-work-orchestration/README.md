@@ -4,12 +4,13 @@
 
 ## 你应该先看什么
 
-1. `00-vision.md`：为什么要做这件事。
-2. `01-domain-model.md`：项目、issue、run、evidence、policy 的关系。
-3. `03-sharing-roadmap.md`：怎么讲给团队听、怎么分阶段分享。
-4. `05-case-playbook.md`：低风险案例怎么执行。
-5. `cases/FUZ-554/README.md`：第一个可复盘案例。
-6. `reports/`：每个阶段的正式报告。
+1. `09-north-star.md`：终极效果和技术分享主线。
+2. `00-vision.md`：为什么要做这件事。
+3. `01-domain-model.md`：项目、issue、run、evidence、policy 的关系。
+4. `03-sharing-roadmap.md`：怎么讲给团队听、怎么分阶段分享。
+5. `05-case-playbook.md`：低风险案例怎么执行。
+6. `cases/FUZ-554/README.md`：第一个可复盘案例。
+7. `reports/`：每个阶段的正式报告。
 
 ## 当前阶段
 
@@ -22,6 +23,7 @@
 
 ### 1. 理念
 
+- `09-north-star.md`
 - `00-vision.md`
 - `01-domain-model.md`
 
@@ -58,6 +60,7 @@
 - Stage review and commit prep 报告：`reports/2026-06-15-phase-23-stage-review-commit-prep.md`
 - Scope split review 报告：`reports/2026-06-15-phase-24-scope-split-review.md`
 - Multica Loop 重构设计：`08-multica-loop-refactor.md`
+- North Star 终局规划：`09-north-star.md`
 
 ## 使用方式
 
