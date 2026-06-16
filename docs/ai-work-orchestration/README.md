@@ -41,6 +41,7 @@
 - `share/FUZ-554-one-page.md`
 - `share/tech-sharing-outline.md`
 - `share/demo-script.md`
+- `share/slide-deck.md`
 
 ### 4. 阶段报告
 
@@ -65,6 +66,7 @@
 - North Star 终局规划：`09-north-star.md`
 - 技术分享大纲：`share/tech-sharing-outline.md`
 - 现场演示脚本：`share/demo-script.md`
+- PPT 页结构：`share/slide-deck.md`
 
 ## 使用方式
 
