@@ -92,6 +92,7 @@ Issue metadata 是 Multica Loop 的 L1 工作记忆。
 
 - 默认只生成本地草稿。
 - 不自动写 Multica issue metadata。
+- 当前没有 metadata 远端写入命令。
 - 不把 token、cookie、密钥、生产数据写入 metadata。
 - 不用 metadata 替代 evidence；metadata 只是索引和状态摘要。
 - 远端写入必须有显式授权和 writeback evidence。

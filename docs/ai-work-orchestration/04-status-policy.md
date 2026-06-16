@@ -8,9 +8,20 @@
 
 - 默认不写远端。
 - comment 和 status 分开授权。
+- comment、status、metadata 是三类不同远端副作用，必须分别记录。
 - dry-run 成功只代表编排链路通过，不代表业务任务完成。
 - 真实 run 成功才有资格进入 `in_review`。
 - 失败状态应尽量保留失败原因，方便下一轮决策。
+
+## 远端副作用分类
+
+| 类型 | 当前能力 | 默认行为 | 证据要求 |
+|---|---|---|---|
+| comment | `--write-comment` | 不写 | `multica-comment.md` + `writeback-summary.md` |
+| status | `--write-status` | 不写 | 状态策略 + `stage-report.md` + `writeback-summary.md` |
+| metadata | 暂不写远端 | 只生成草稿 | `metadata-draft.json/md` |
+
+metadata 写回暂不实现。当前只允许生成本地草稿，后续必须单独设计显式授权命令和 writeback evidence。
 
 ## 状态映射
 
@@ -56,6 +67,7 @@
 - `summary.md`：ai-loop 执行摘要，作为运行事实入口。
 - `multica-comment.md`：可人工复核后写回 Multica 的 comment 草稿。
 - `stage-report.md`：桥接阶段报告，记录状态映射、映射原因、远端写入请求和实际写入结果。
+- `writeback-summary.md`：远端写入请求和结果摘要，即使没有实际写入也要记录。
 
 `stage-report.md` 中的状态字段按以下语义理解：
 
@@ -63,6 +75,7 @@
 - `Mapped status`：如果允许写状态，本次会写入的目标状态；`none` 表示策略禁止状态写入。
 - `Mapping reason`：为什么产生该状态映射。
 - `Comment written` / `Status written`：是否实际发生远端写入。
+- `Metadata written`：当前固定为 `false`，因为 metadata 远端写回尚未实现。
 - `Write error log`：远端写入失败时保留的本地错误日志路径。
 
 这让每次执行都能被分享、复盘和审计，而不需要依赖终端输出。
@@ -81,11 +94,13 @@
 
 - 有本地证据包和 `multica-comment.md` 草稿的 `FUZ-*` 阶段性 comment 回写。
 - 基于已验证策略的 issue status 同步。
+- 本地 metadata 草稿生成。
 - 回写后必须保留 `writeback-summary.md` 和 `logbook.md` 记录。
 
 不适用范围：
 
 - `git push`、`git commit`、MR 创建或合并。
+- Multica issue metadata 远端写入。
 - 生产系统访问、部署、数据库写入、批量破坏性操作。
 - 删除文件、清理大目录或不可逆操作。
 
