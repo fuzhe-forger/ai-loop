@@ -97,6 +97,7 @@
 - Remote write 字段阶段报告：`reports/2026-06-16-phase-43-remote-write-fields.md`
 - Run evidence refresh 阶段报告：`reports/2026-06-16-phase-44-run-evidence-refresh.md`
 - State metadata gate 阶段报告：`reports/2026-06-16-phase-45-state-metadata-gate.md`
+- 分享预检 state gate 阶段报告：`reports/2026-06-16-phase-46-sharing-preflight-state-gate.md`
 
 ## 使用方式
 
