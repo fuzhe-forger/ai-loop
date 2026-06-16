@@ -72,11 +72,29 @@ has_file() {
   fi
 }
 
+state_field() {
+  local state_json="$1"
+  local field="$2"
+  if [[ ! -s "$state_json" ]]; then
+    printf 'not evaluated'
+    return
+  fi
+  python3 - <<'PY' "$state_json" "$field"
+import json
+import sys
+
+path, field = sys.argv[1:]
+with open(path, encoding="utf-8") as fh:
+    data = json.load(fh)
+print(data.get(field) or "unknown")
+PY
+}
+
 run_count=0
 complete_core_count=0
 remote_write_count=0
-runs_table="| Run | Summary | Stage Report | Comment Draft | Writeback |
-|---|---|---|---|---|
+runs_table="| Run | Summary | Stage Report | Comment Draft | Writeback | Suggested State | Next Actor |
+|---|---|---|---|---|---|---|
 "
 
 for run_dir in "${run_dirs[@]}"; do
@@ -89,13 +107,15 @@ for run_dir in "${run_dirs[@]}"; do
   stage_report="$(has_file "$run_dir/stage-report.md")"
   comment="$(has_file "$run_dir/multica-comment.md")"
   writeback="$(has_file "$run_dir/writeback-summary.md")"
+  suggested_state="$(state_field "$run_dir/state-evaluation.json" to)"
+  next_actor="$(state_field "$run_dir/state-evaluation.json" required_next_actor)"
   if [[ "$summary" == "yes" && "$stage_report" == "yes" && "$comment" == "yes" ]]; then
     complete_core_count=$((complete_core_count + 1))
   fi
   if [[ "$writeback" == "yes" ]]; then
     remote_write_count=$((remote_write_count + 1))
   fi
-  runs_table+="| ${run_id} | ${summary} | ${stage_report} | ${comment} | ${writeback} |
+  runs_table+="| ${run_id} | ${summary} | ${stage_report} | ${comment} | ${writeback} | ${suggested_state} | ${next_actor} |
 "
 done
 
@@ -145,6 +165,7 @@ ${patch_section}
 
 - Are the case goal and boundaries clear?
 - Do all formal review runs include summary, stage report, and comment draft?
+- Do evaluated runs have a clear suggested state and next actor?
 - Are remote side effects recorded in writeback summaries when they happened?
 - If a patch summary is included, does its scope check pass and match the intended change boundary?
 - Is there at least one final report or guide that a teammate can read first?
