@@ -85,6 +85,7 @@
 - Evidence 标准阶段报告：`reports/2026-06-16-phase-34-evidence-standard.md`
 - 状态机阶段报告：`reports/2026-06-16-phase-35-loop-state-machine.md`
 - 本地状态判断脚本阶段报告：`reports/2026-06-16-phase-36-state-evaluator.md`
+- 状态 evidence 与 review packet 阶段报告：`reports/2026-06-16-phase-37-state-review-packet.md`
 
 ## 使用方式
 
