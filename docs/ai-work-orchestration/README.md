@@ -90,6 +90,7 @@
 - 本地状态判断脚本阶段报告：`reports/2026-06-16-phase-36-state-evaluator.md`
 - 状态 evidence 与 review packet 阶段报告：`reports/2026-06-16-phase-37-state-review-packet.md`
 - Comment 状态建议阶段报告：`reports/2026-06-16-phase-38-comment-state-recommendation.md`
+- Issue Metadata 草稿阶段报告：`reports/2026-06-16-phase-39-issue-metadata-draft.md`
 
 ## 使用方式
 
