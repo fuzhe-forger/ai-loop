@@ -41,6 +41,7 @@
 - `18-best-practices.md`
 - `19-training-materials.md`
 - `20-automation-enhancement.md`
+- `21-local-operating-protocol.md`
 
 ### 2. 路线
 
