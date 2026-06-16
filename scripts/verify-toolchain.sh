@@ -184,6 +184,19 @@ if [[ "$state_gate" == "true" ]]; then
         missing+=("$required_file")
       fi
     done
+    if [[ -s "$run_dir/metadata-draft.json" ]]; then
+      assigned_actor="$(python3 - <<'PY' "$run_dir/metadata-draft.json"
+import json
+import sys
+with open(sys.argv[1], encoding="utf-8") as fh:
+    data = json.load(fh)
+print(data.get("metadata", {}).get("assigned_actor") or "")
+PY
+)"
+      if [[ -z "$assigned_actor" ]]; then
+        missing+=("metadata.assigned_actor")
+      fi
+    fi
     if [[ ${#missing[@]} -eq 0 ]]; then
       state_rows+="| ${run_id} | PASSED | |"
     else
