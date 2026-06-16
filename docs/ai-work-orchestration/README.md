@@ -45,6 +45,7 @@
 - `share/slide-deck.md`
 - `share/slides-content.md`
 - `share/speaker-notes.md`
+- `share/preflight-checklist.md`
 
 ### 4. 阶段报告
 
@@ -73,6 +74,8 @@
 - PPT 页结构：`share/slide-deck.md`
 - PPT 上屏内容：`share/slides-content.md`
 - 逐页讲者稿：`share/speaker-notes.md`
+- 会前预检清单：`share/preflight-checklist.md`
+- 会前预检阶段报告：`reports/2026-06-16-phase-33-preflight-checklist.md`
 
 ## 使用方式
 
