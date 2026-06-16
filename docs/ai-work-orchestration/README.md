@@ -42,6 +42,7 @@
 - `19-training-materials.md`
 - `20-automation-enhancement.md`
 - `21-local-operating-protocol.md`
+- `22-obsidian-self-evolution.md`
 
 ### 2. 路线
 
