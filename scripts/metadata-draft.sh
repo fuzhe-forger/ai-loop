@@ -74,18 +74,19 @@ fi
 
 state_json_path="$run_dir/state-evaluation.json"
 evidence_json_path="$run_dir/evidence.json"
+writeback_summary_path="$run_dir/writeback-summary.md"
 
 if [[ ! -s "$state_json_path" ]]; then
   ./scripts/evaluate-state.sh --issue "$issue" --run-id "$run_id" --write-run >/dev/null
 fi
 
-json_content="$(python3 - <<'PY' "$issue" "$run_id" "$run_dir" "$state_json_path" "$evidence_json_path" "$review_verdict"
+json_content="$(python3 - <<'PY' "$issue" "$run_id" "$run_dir" "$state_json_path" "$evidence_json_path" "$writeback_summary_path" "$review_verdict"
 import datetime as dt
 import json
 import sys
 from pathlib import Path
 
-issue, run_id, run_dir, state_json_path, evidence_json_path, review_verdict = sys.argv[1:]
+issue, run_id, run_dir, state_json_path, evidence_json_path, writeback_summary_path, review_verdict = sys.argv[1:]
 
 with open(state_json_path, encoding="utf-8") as fh:
     state = json.load(fh)
@@ -109,6 +110,8 @@ metadata = {
     "blocked_reason": blocked_reason,
     "next_actor": state.get("required_next_actor") or "unknown",
     "state_reason": state_reason,
+    "remote_write_completed": state.get("checks", {}).get("remote_write_completed") == "YES",
+    "writeback_summary": writeback_summary_path if Path(writeback_summary_path).is_file() else "",
     "updated_by": "multica-loop-local",
     "updated_at": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
 }
@@ -156,6 +159,8 @@ print(f"""# Issue Metadata Draft: {data['issue']}
 | blocked_reason | {metadata['blocked_reason']} |
 | next_actor | {metadata['next_actor']} |
 | state_reason | {metadata['state_reason']} |
+| remote_write_completed | {str(metadata['remote_write_completed']).lower()} |
+| writeback_summary | {metadata['writeback_summary']} |
 | updated_by | {metadata['updated_by']} |
 | updated_at | {metadata['updated_at']} |
 

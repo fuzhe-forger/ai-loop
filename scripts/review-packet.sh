@@ -90,11 +90,49 @@ print(data.get(field) or "unknown")
 PY
 }
 
+state_check() {
+  local state_json="$1"
+  local writeback_summary="$2"
+  local field="$3"
+  python3 - <<'PY' "$state_json" "$writeback_summary" "$field"
+import json
+import sys
+from pathlib import Path
+
+state_path, writeback_path, field = sys.argv[1:]
+
+def writeback_completed(path: str) -> str:
+    item = Path(path)
+    if not item.is_file() or item.stat().st_size == 0:
+        return "NO"
+    text = item.read_text(encoding="utf-8", errors="replace")
+    completed = any(marker in text for marker in [
+        "Comment written: true",
+        "Status written: true",
+        "Metadata written: true",
+        "Comment ID:",
+    ])
+    failed = any(marker in text for marker in [
+        "Comment written: failed",
+        "Status written: failed",
+        "Metadata written: failed",
+    ])
+    return "YES" if completed and not failed else "NO"
+
+if Path(state_path).is_file() and Path(state_path).stat().st_size > 0:
+    with open(state_path, encoding="utf-8") as fh:
+        data = json.load(fh)
+    print(data.get("checks", {}).get(field) or writeback_completed(writeback_path))
+else:
+    print(writeback_completed(writeback_path))
+PY
+}
+
 run_count=0
 complete_core_count=0
 remote_write_count=0
-runs_table="| Run | Summary | Stage Report | Comment Draft | Writeback | Suggested State | Next Actor |
-|---|---|---|---|---|---|---|
+runs_table="| Run | Summary | Stage Report | Comment Draft | Writeback | Remote Write Done | Suggested State | Next Actor |
+|---|---|---|---|---|---|---|---|
 "
 
 for run_dir in "${run_dirs[@]}"; do
@@ -107,6 +145,7 @@ for run_dir in "${run_dirs[@]}"; do
   stage_report="$(has_file "$run_dir/stage-report.md")"
   comment="$(has_file "$run_dir/multica-comment.md")"
   writeback="$(has_file "$run_dir/writeback-summary.md")"
+  remote_write_done="$(state_check "$run_dir/state-evaluation.json" "$run_dir/writeback-summary.md" remote_write_completed)"
   suggested_state="$(state_field "$run_dir/state-evaluation.json" to)"
   next_actor="$(state_field "$run_dir/state-evaluation.json" required_next_actor)"
   if [[ "$summary" == "yes" && "$stage_report" == "yes" && "$comment" == "yes" ]]; then
@@ -115,7 +154,7 @@ for run_dir in "${run_dirs[@]}"; do
   if [[ "$writeback" == "yes" ]]; then
     remote_write_count=$((remote_write_count + 1))
   fi
-  runs_table+="| ${run_id} | ${summary} | ${stage_report} | ${comment} | ${writeback} | ${suggested_state} | ${next_actor} |
+  runs_table+="| ${run_id} | ${summary} | ${stage_report} | ${comment} | ${writeback} | ${remote_write_done} | ${suggested_state} | ${next_actor} |
 "
 done
 
@@ -166,6 +205,7 @@ ${patch_section}
 - Are the case goal and boundaries clear?
 - Do all formal review runs include summary, stage report, and comment draft?
 - Do evaluated runs have a clear suggested state and next actor?
+- Does the remote-write-done column match the intended writeback evidence?
 - Are remote side effects recorded in writeback summaries when they happened?
 - If a patch summary is included, does its scope check pass and match the intended change boundary?
 - Is there at least one final report or guide that a teammate can read first?
