@@ -43,6 +43,7 @@
 - `share/tech-sharing-outline.md`
 - `share/demo-script.md`
 - `share/slide-deck.md`
+- `share/slides-content.md`
 - `share/speaker-notes.md`
 
 ### 4. 阶段报告
@@ -70,6 +71,7 @@
 - 技术分享大纲：`share/tech-sharing-outline.md`
 - 现场演示脚本：`share/demo-script.md`
 - PPT 页结构：`share/slide-deck.md`
+- PPT 上屏内容：`share/slides-content.md`
 - 逐页讲者稿：`share/speaker-notes.md`
 
 ## 使用方式

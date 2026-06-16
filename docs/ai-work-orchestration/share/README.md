@@ -47,11 +47,13 @@
 阅读：
 
 - `slide-deck.md`
+- `slides-content.md`
 
 用途：
 
 - 直接转成幻灯片。
 - 每页包含标题、核心信息、建议画面、讲者备注。
+- `slides-content.md` 提供更精简的上屏文案。
 
 ### 5. 排练讲法
 
@@ -119,6 +121,7 @@ Artifacts & Memory：知识沉淀层
 | Outline | ready | 正式分享大纲 |
 | Demo script | rehearsed | 已彩排并修正注意点 |
 | Slide deck structure | ready | 可转 PPT |
+| Slides content | ready | 可直接制作 PPT 的上屏内容 |
 | Speaker notes | ready | 可排练讲稿 |
 
 ## 下一步
