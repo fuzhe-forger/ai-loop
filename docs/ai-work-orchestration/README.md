@@ -14,7 +14,8 @@
 8. `03-sharing-roadmap.md`：怎么讲给团队听、怎么分阶段分享。
 9. `05-case-playbook.md`：低风险案例怎么执行。
 10. `cases/FUZ-554/README.md`：第一个可复盘案例。
-11. `reports/`：每个阶段的正式报告。
+11. `templates/`：Multica 信息治理与结论优先输出模板。
+12. `reports/`：每个阶段的正式报告。
 
 ## 当前阶段
 
@@ -43,6 +44,10 @@
 - `20-automation-enhancement.md`
 - `21-local-operating-protocol.md`
 - `22-obsidian-self-evolution.md`
+- `templates/multica-issue-summary-template.md`
+- `templates/multica-comment-summary-template.md`
+- `templates/loop-handoff-summary-template.md`
+- `templates/obsidian-readable-card-template.md`
 
 ### 2. 路线
 
@@ -123,6 +128,10 @@
 - 团队分享与复制阶段报告：`reports/2026-06-16-phase-57-team-sharing.md`
 - 自动化增强阶段报告：`reports/2026-06-16-phase-58-automation-enhancement.md`
 - 本地落地规约阶段报告：`reports/2026-06-16-phase-59-local-adoption.md`
+- Multica issue 摘要模板：`templates/multica-issue-summary-template.md`
+- Multica comment 摘要模板：`templates/multica-comment-summary-template.md`
+- Loop handoff 摘要模板：`templates/loop-handoff-summary-template.md`
+- Obsidian 可读摘要卡模板：`templates/obsidian-readable-card-template.md`
 
 ## 使用方式
 

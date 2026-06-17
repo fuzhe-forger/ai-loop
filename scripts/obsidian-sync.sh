@@ -32,10 +32,12 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 
 mkdir -p \
   "$GENERATED/multica" \
+  "$GENERATED/multica/issues" \
   "$GENERATED/loop/docs" \
   "$GENERATED/loop/runs" \
   "$GENERATED/agents" \
   "$GENERATED/autopilots" \
+  "$GENERATED/governance" \
   "$GENERATED/codegraph/repositories"
 
 echo ""
@@ -44,7 +46,56 @@ multica project list --output json > "$TMP_DIR/projects.json" 2>/dev/null || ech
 multica agent list --include-archived --output json > "$TMP_DIR/agents.json" 2>/dev/null || echo '[]' > "$TMP_DIR/agents.json"
 multica runtime list --output json > "$TMP_DIR/runtimes.json" 2>/dev/null || echo '[]' > "$TMP_DIR/runtimes.json"
 multica autopilot list --output json > "$TMP_DIR/autopilots.json" 2>/dev/null || echo '{"autopilots":[]}' > "$TMP_DIR/autopilots.json"
-multica issue list --limit 600 --offset 0 --output json > "$TMP_DIR/issues.json" 2>/dev/null || echo '{"issues":[]}' > "$TMP_DIR/issues.json"
+
+ISSUE_PAGE_LIMIT=100
+ISSUE_STATUSES=(backlog todo in_progress in_review blocked done cancelled)
+mkdir -p "$TMP_DIR/issue-pages"
+for issue_status in "${ISSUE_STATUSES[@]}"; do
+  issue_offset=0
+  while true; do
+    issue_page="$TMP_DIR/issue-pages/${issue_status}-${issue_offset}.json"
+    if ! multica issue list --status "$issue_status" --limit "$ISSUE_PAGE_LIMIT" --offset "$issue_offset" --output json > "$issue_page" 2>/dev/null; then
+      echo '{"issues":[]}' > "$issue_page"
+      break
+    fi
+    issue_page_count=$(python3 - <<'PY' "$issue_page"
+import json
+import sys
+from pathlib import Path
+
+data = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8") or "{}")
+print(len(data.get("issues") or []))
+PY
+)
+    if (( issue_page_count < ISSUE_PAGE_LIMIT )); then
+      break
+    fi
+    issue_offset=$((issue_offset + ISSUE_PAGE_LIMIT))
+  done
+done
+python3 - <<'PY' "$TMP_DIR/issue-pages" "$TMP_DIR/issues.json"
+import json
+import sys
+from pathlib import Path
+
+pages_dir = Path(sys.argv[1])
+out_path = Path(sys.argv[2])
+issues_by_key = {}
+for page in sorted(pages_dir.glob("*.json")):
+    data = json.loads(page.read_text(encoding="utf-8") or "{}")
+    for issue in data.get("issues") or []:
+        key = issue.get("id") or issue.get("identifier") or str(issue.get("number") or "")
+        if key:
+            issues_by_key[key] = issue
+
+issues = sorted(
+    issues_by_key.values(),
+    key=lambda issue: (issue.get("updated_at") or "", issue.get("identifier") or ""),
+    reverse=True,
+)
+out_path.write_text(json.dumps({"issues": issues}, ensure_ascii=False, indent=2), encoding="utf-8")
+print(f"读取 issue: {len(issues)}")
+PY
 
 echo ""
 echo "## 2. 生成 Multica 快照页"
@@ -148,6 +199,209 @@ write_issue_table(
 )
 print(f"生成: {sys.argv[4]}")
 print(f"生成: {sys.argv[5]}")
+PY
+
+echo ""
+echo "## 2.1 生成 Multica 可读摘要卡与外链索引"
+python3 - <<'PY' "$TMP_DIR/issues.json" "$TMP_DIR/projects.json" "$TMP_DIR/agents.json" "$TMP_DIR/readable-summaries.md" "$TMP_DIR/issue-cards" "$TMP_DIR/external-links.md" "$ARCHIVED_ISSUE_RETENTION_DAYS"
+import json
+import re
+import sys
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+issues_data = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8") or "{}")
+projects = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8") or "[]")
+agents = json.loads(Path(sys.argv[3]).read_text(encoding="utf-8") or "[]")
+index_path = Path(sys.argv[4])
+cards_dir = Path(sys.argv[5])
+links_path = Path(sys.argv[6])
+retention_days = int(sys.argv[7])
+
+cards_dir.mkdir(parents=True, exist_ok=True)
+issues = issues_data.get("issues") or []
+project_by_id = {project.get("id"): project.get("title") for project in projects}
+agent_by_id = {agent.get("id"): agent.get("name") for agent in agents}
+cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
+
+
+def parse_time(value):
+    if not value:
+        return datetime.fromtimestamp(0, timezone.utc)
+    return datetime.fromisoformat(value).astimezone(timezone.utc)
+
+
+def project_name(issue):
+    return project_by_id.get(issue.get("project_id")) or "未归属"
+
+
+def assignee_name(issue):
+    if not issue.get("assignee_id"):
+        return "未分配"
+    if issue.get("assignee_type") == "agent":
+        return agent_by_id.get(issue.get("assignee_id")) or issue.get("assignee_id")
+    return issue.get("assignee_id")
+
+
+def esc(value):
+    return str(value or "").replace("|", "\\|").replace("\n", " ")
+
+
+def section(markdown, heading):
+    marker = f"## {heading}"
+    start = markdown.find(marker)
+    if start < 0:
+        return ""
+    body_start = markdown.find("\n", start)
+    if body_start < 0:
+        return ""
+    next_heading = re.search(r"\n##\s+", markdown[body_start + 1:])
+    if next_heading:
+        end = body_start + 1 + next_heading.start()
+    else:
+        end = len(markdown)
+    return markdown[body_start:end].strip()
+
+
+def bullets_from_section(text, limit=5):
+    bullets = []
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("- "):
+            bullets.append(stripped)
+        elif re.match(r"^\d+\.\s+", stripped):
+            bullets.append("- " + re.sub(r"^\d+\.\s+", "", stripped))
+        if len(bullets) >= limit:
+            break
+    return bullets
+
+
+def fallback_summary(issue):
+    title = issue.get("title") or issue.get("identifier") or "未命名 issue"
+    return [f"- {title}", f"- 当前状态：{issue.get('status')}", "- 详情见 Evidence Links 或原始 issue 描述。"]
+
+
+url_re = re.compile(r"https?://[^\s\])>\"']+")
+path_re = re.compile(r"(?:(?:/home/user|/mnt/d|/tmp)/[^\s`|)]+|(?:tasks|runs|docs|scripts)/[^\s`|)]+)")
+
+
+def extract_links(text):
+    found = []
+    seen = set()
+    for kind, regex in (("url", url_re), ("path", path_re)):
+        for match in regex.finditer(text):
+            value = match.group(0).rstrip(".,;，。；")
+            if value in seen:
+                continue
+            seen.add(value)
+            found.append((kind, value))
+    return found
+
+
+visible = []
+for issue in issues:
+    status = issue.get("status")
+    if status not in ("done", "cancelled") or parse_time(issue.get("updated_at")) >= cutoff:
+        visible.append(issue)
+
+visible = sorted(visible, key=lambda item: (item.get("status") in ("done", "cancelled"), item.get("updated_at") or ""), reverse=True)
+all_links = []
+
+for issue in visible:
+    identifier = issue.get("identifier") or str(issue.get("number") or issue.get("id") or "unknown")
+    description = issue.get("description") or ""
+    core = bullets_from_section(section(description, "核心结论")) or fallback_summary(issue)
+    pending = bullets_from_section(section(description, "待确认"), limit=10)
+    next_steps = bullets_from_section(section(description, "下一步"), limit=10)
+    links = extract_links(description)
+    for kind, value in links:
+        all_links.append((identifier, issue.get("title"), kind, value, issue.get("status")))
+
+    lines = []
+    lines.append("---\n")
+    lines.append("type: multica_issue_summary\n")
+    lines.append(f"issue: {identifier}\n")
+    lines.append(f"status: {issue.get('status')}\n")
+    lines.append("generated: auto\n")
+    lines.append("---\n\n")
+    lines.append(f"# {identifier} {issue.get('title') or ''}\n\n")
+    lines.append("## 一句话结论\n\n")
+    lines.append((core[0][2:] if core and core[0].startswith("- ") else core[0] if core else issue.get("title") or identifier) + "\n\n")
+    lines.append("## 核心结论\n\n")
+    lines.extend(line + "\n" for line in core)
+    lines.append("\n## 当前状态\n\n")
+    lines.append(f"- Status: {issue.get('status')}\n")
+    lines.append(f"- Priority: {issue.get('priority')}\n")
+    lines.append(f"- Project: {project_name(issue)}\n")
+    lines.append(f"- Assignee: {assignee_name(issue)}\n")
+    lines.append(f"- Updated: {issue.get('updated_at')}\n")
+    lines.append("\n## Evidence Links\n\n")
+    if links:
+        lines.append("| 类型 | 链接/路径 |\n")
+        lines.append("|---|---|\n")
+        for kind, value in links[:30]:
+            lines.append(f"| {kind} | {esc(value)} |\n")
+        if len(links) > 30:
+            lines.append(f"| more | 另有 {len(links) - 30} 条链接，见 external-links 索引 |\n")
+    else:
+        lines.append("- 暂无可提取链接。\n")
+    lines.append("\n## 待确认\n\n")
+    if pending:
+        lines.extend(line + "\n" for line in pending)
+    else:
+        lines.append("- 暂无。\n")
+    lines.append("\n## 下一步\n\n")
+    if next_steps:
+        lines.extend(line + "\n" for line in next_steps)
+    else:
+        lines.append("- 查看 Multica 原始 issue 判断下一步。\n")
+    lines.append("\n## 原始描述摘录\n\n")
+    excerpt = description[:1200]
+    lines.append(excerpt if excerpt else "暂无描述。")
+    if len(description) > 1200:
+        lines.append("\n\n_(摘录前 1200 字符，完整内容见 Multica issue)_\n")
+    (cards_dir / f"{identifier}.md").write_text("".join(lines), encoding="utf-8")
+
+index_lines = []
+index_lines.append("---\n")
+index_lines.append("type: readable_summary_index\n")
+index_lines.append("source: multica issue list\n")
+index_lines.append("generated: auto\n")
+index_lines.append("---\n\n")
+index_lines.append("# Multica Issue 可读摘要索引\n\n")
+index_lines.append("由 `obsidian-sync.sh` 自动生成，可覆盖。\n\n")
+index_lines.append(f"摘要卡数量：{len(visible)}\n\n")
+index_lines.append("| Issue | 状态 | 优先级 | 项目 | 一句话结论 | 摘要卡 |\n")
+index_lines.append("|---|---|---|---|---|---|\n")
+for issue in visible:
+    identifier = issue.get("identifier") or str(issue.get("number") or issue.get("id") or "unknown")
+    description = issue.get("description") or ""
+    core = bullets_from_section(section(description, "核心结论")) or fallback_summary(issue)
+    one_liner = core[0][2:] if core and core[0].startswith("- ") else core[0] if core else issue.get("title") or identifier
+    index_lines.append(
+        f"| {identifier} | {issue.get('status')} | {issue.get('priority')} | {esc(project_name(issue))} | "
+        f"{esc(one_liner[:90])} | [[issues/{identifier}.md|卡片]] |\n"
+    )
+index_path.write_text("".join(index_lines), encoding="utf-8")
+
+link_lines = []
+link_lines.append("---\n")
+link_lines.append("type: external_links_index\n")
+link_lines.append("source: multica issue descriptions\n")
+link_lines.append("generated: auto\n")
+link_lines.append("---\n\n")
+link_lines.append("# 外部产物链接索引\n\n")
+link_lines.append("由 `obsidian-sync.sh` 自动生成，可覆盖。\n\n")
+link_lines.append(f"链接数量：{len(all_links)}\n\n")
+link_lines.append("| Issue | 状态 | 类型 | 链接/路径 | 标题 |\n")
+link_lines.append("|---|---|---|---|---|\n")
+for identifier, title, kind, value, status in all_links:
+    link_lines.append(f"| {identifier} | {status} | {kind} | {esc(value)} | {esc(title)[:80]} |\n")
+links_path.write_text("".join(link_lines), encoding="utf-8")
+
+print(f"生成 issue 可读摘要卡: {len(visible)}")
+print(f"生成: {index_path}")
+print(f"生成: {links_path}")
 PY
 
 python3 - <<'PY' "$TMP_DIR/agents.json" "$TMP_DIR/runtimes.json" "$TMP_DIR/runtime-status.md"
@@ -533,10 +787,15 @@ if [[ "$DRY_RUN" == "false" ]]; then
   cp "$TMP_DIR/projects.md" "$GENERATED/multica/projects.md"
   cp "$TMP_DIR/active-issues.md" "$GENERATED/multica/active-issues.md"
   cp "$TMP_DIR/archived-issues.md" "$GENERATED/multica/archived-issues.md"
+  cp "$TMP_DIR/readable-summaries.md" "$GENERATED/multica/readable-summaries.md"
+  rsync -a "$TMP_DIR/issue-cards/" "$GENERATED/multica/issues/"
+  cp "$TMP_DIR/external-links.md" "$GENERATED/governance/external-links.md"
   cp "$TMP_DIR/runtime-status.md" "$GENERATED/agents/runtime-status.md"
   cp "$TMP_DIR/autopilots.md" "$GENERATED/autopilots/autopilots.md"
   cp "$TMP_DIR/paused-autopilots.md" "$GENERATED/autopilots/paused-autopilots.md"
   cp "$TMP_DIR/runs-index.md" "$GENERATED/loop/runs-index.md"
+  echo "生成 Multica 可读摘要卡到: $GENERATED/multica/issues/"
+  echo "生成外部产物链接索引到: $GENERATED/governance/external-links.md"
   if [[ -f "$TMP_DIR/ai-loop-docs-index.md" ]]; then
     cp "$TMP_DIR/ai-loop-docs-index.md" "$GENERATED/loop/ai-loop-docs-index.md"
     rsync -a "$TMP_DIR/ai-loop-docs/" "$GENERATED/loop/docs/"

@@ -58,6 +58,17 @@ Multica Issue
 
 ## Multica 追踪规则
 
+### 结论优先模板
+
+所有新 issue、阶段性 comment、智能体 handoff、Obsidian 摘要卡默认使用以下模板：
+
+- `docs/ai-work-orchestration/templates/multica-issue-summary-template.md`
+- `docs/ai-work-orchestration/templates/multica-comment-summary-template.md`
+- `docs/ai-work-orchestration/templates/loop-handoff-summary-template.md`
+- `docs/ai-work-orchestration/templates/obsidian-readable-card-template.md`
+
+人类默认阅读层必须先给 3-5 条核心结论；完整过程、日志、文档和代码证据必须通过链接或路径补充。
+
 ### Intake Gate
 
 所有任务先过 intake gate：
@@ -83,6 +94,14 @@ Gate 检查：
 - 创建 issue、写 comment、改 status、写 metadata 都属于远端副作用。
 - 默认只生成草稿和 gate report。
 - 用户明确授权后才执行。
+
+### 外部产物链接回写
+
+- 任何飞书文档、Wiki、MR、Grafana 面板、发布单、测试报告等外部产物，一旦创建或确认采用，必须回写到对应 Multica issue。
+- 回写内容至少包含：产物名称、URL、本地草案或 evidence 路径、写入时间、当前状态。
+- 若创建外部产物时发生限流、失败或只创建了空壳，必须在同一轮补写内容并验证，再回写 issue。
+- 若暂时无法回写，必须在当前回复中明确标记 `待回写 Multica`，并说明阻塞原因。
+- 完成前必须检查对应 issue 描述或 comment 中是否已包含最新外部产物链接。
 
 ## Loop 协同规则
 
@@ -181,6 +200,7 @@ cd /home/user/JAVA/ai/ai-loop
 - state gate 通过。
 - review packet 已复核。
 - 远端副作用已通过 writeback gate。
+- 新建或采用的外部产物链接已回写到 Multica issue。
 - Obsidian 已同步或有明确待同步记录。
 - 经验已进入 memory，或明确说明无需沉淀。
 
