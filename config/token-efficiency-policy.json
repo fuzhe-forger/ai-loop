@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "name": "sinan-token-efficiency-policy",
+  "purpose": "Reusable token governance policy for Sinan / Loop tasks.",
+  "defaults": {
+    "large_file_threshold_bytes": 12000,
+    "progress_update_max_lines": 8,
+    "handoff_max_lines": 120,
+    "prefer_paths_over_full_text": true,
+    "read_strategy": "index_or_search_first_then_targeted_read",
+    "audit_script": "scripts/token-efficiency-audit.sh"
+  },
+  "start_of_loop_checklist": [
+    "classify_task_size_and_risk",
+    "identify_context_source_artifact",
+    "state_read_strategy",
+    "state_large_file_policy",
+    "state_evidence_reference_policy",
+    "state_compression_trigger",
+    "state_closeout_or_handoff_plan"
+  ],
+  "compression_triggers": [
+    {
+      "id": "long_prior_chat",
+      "condition": "prior chat logs or pasted context dominate the turn",
+      "action": "compress into an artifact and continue from the artifact path"
+    },
+    {
+      "id": "large_artifact",
+      "condition": "markdown/json/log/readback file exceeds large_file_threshold_bytes",
+      "action": "inspect headings or generate summary before reading details"
+    },
+    {
+      "id": "phase_shift",
+      "condition": "task moves between exploration, implementation, verification, or handoff phases",
+      "action": "write summary.md or handoff.md with next minimum context"
+    },
+    {
+      "id": "repeated_evidence",
+      "condition": "same evidence, paths, or headings are repeated many times",
+      "action": "mark canonical snapshot and cite only that path"
+    },
+    {
+      "id": "stale_context_risk",
+      "condition": "old assumptions conflict with current repo or evidence",
+      "action": "write corrected mental model and stop using stale context"
+    }
+  ],
+  "output_strategy_matrix": [
+    {
+      "scenario": "low_risk_local_progress",
+      "compression": "strong",
+      "must_include": ["status", "evidence_path", "next_action"]
+    },
+    {
+      "scenario": "local_code_or_doc_work",
+      "compression": "medium",
+      "must_include": ["file_paths", "symbols_or_sections", "validation_commands"]
+    },
+    {
+      "scenario": "design_or_product_summary",
+      "compression": "medium",
+      "must_include": ["decision", "boundary", "acceptance", "next_slice"]
+    },
+    {
+      "scenario": "external_writeback_draft",
+      "compression": "light",
+      "must_include": ["target", "fields", "payload_summary", "readback_plan"]
+    },
+    {
+      "scenario": "approval_request",
+      "compression": "do_not_compress_critical_details",
+      "must_include": ["side_effects", "risk", "rollback", "exact_operation", "approval_boundary"]
+    },
+    {
+      "scenario": "delete_deploy_permission_or_production",
+      "compression": "do_not_compress",
+      "must_include": ["operation_object", "irreversibility", "environment", "confirmation_required"]
+    }
+  ],
+  "never_compress_or_rewrite": [
+    "commands",
+    "code",
+    "stack_traces",
+    "error_messages",
+    "file_paths",
+    "external_ids",
+    "approval_boundary",
+    "rollback_steps",
+    "security_warnings"
+  ],
+  "closeout_required_section": {
+    "heading": "Token 使用复盘",
+    "fields": [
+      "context_source",
+      "large_files_read_fully",
+      "readback_log_handling",
+      "evidence_references",
+      "handoff_path",
+      "waste_avoided",
+      "next_loop_minimum_context"
+    ]
+  },
+  "handoff_required_fields": [
+    "current_goal",
+    "acceptance_criteria",
+    "completed_work",
+    "evidence_paths",
+    "current_repo_state",
+    "approval_boundary",
+    "next_minimum_slice",
+    "do_not_reread",
+    "canonical_snapshots"
+  ],
+  "audit": {
+    "required_for_non_trivial_loop": true,
+    "pass_score_min": 70,
+    "warn_score_min": 45,
+    "default_outputs": [
+      "runs/<run-id>/token-efficiency-audit.md",
+      "runs/<run-id>/token-efficiency-audit.json"
+    ]
+  }
+}

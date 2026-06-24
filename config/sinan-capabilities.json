@@ -1,0 +1,444 @@
+{
+  "schema_version": 1,
+  "name": "sinan-capabilities",
+  "description": "司南核心能力注册表：统一记录能力、入口脚本、证据产物、文档和验证方式。",
+  "capabilities": [
+    {
+      "id": "execution_preflight",
+      "name": "执行前治理",
+      "status": "ready",
+      "phase": "Phase H",
+      "entrypoints": [
+        "scripts/loop-execution-preflight.sh"
+      ],
+      "configs": [
+        "config/timebox-policy.json",
+        "config/approval-boundary.json"
+      ],
+      "evidence_outputs": [
+        "runs/<run-id>/execution-preflight.md",
+        "runs/<run-id>/execution-preflight.json"
+      ],
+      "docs": [
+        "docs/ai-work-orchestration/21-local-operating-protocol.md",
+        "docs/ai-work-orchestration/24-execution-governance-matrix.md"
+      ],
+      "verification": [
+        "scripts/verify-toolchain.sh --case <issue> --pattern <run-id> --strict --state-gate"
+      ],
+      "side_effect_policy": "local-only; remote writes must be separately approved"
+    },
+    {
+      "id": "requirement_design_delivery_gates",
+      "name": "需求/方案/产出门禁",
+      "status": "ready",
+      "phase": "Phase H",
+      "entrypoints": [
+        "scripts/requirement-gate.sh",
+        "scripts/design-gate.sh",
+        "scripts/deliverable-gate.sh",
+        "scripts/gate-policy-check.sh"
+      ],
+      "configs": [
+        "config/gate-policy.json"
+      ],
+      "evidence_outputs": [
+        "runs/<run-id>/requirement-gate.md",
+        "runs/<run-id>/design-gate.md",
+        "runs/<run-id>/deliverable-gate.md",
+        "runs/<run-id>/gate-policy-check.json"
+      ],
+      "docs": [
+        "docs/ai-work-orchestration/23-design-output-governance.md",
+        "docs/ai-work-orchestration/24-execution-governance-matrix.md"
+      ],
+      "verification": [
+        "scripts/verify-toolchain.sh --list-checks",
+        "scripts/verify-toolchain.sh --case <issue> --pattern <run-id>"
+      ],
+      "side_effect_policy": "local-only gate evaluation"
+    },
+    {
+      "id": "trusted_timing_calibration",
+      "name": "可信计时与估时校准",
+      "status": "ready",
+      "phase": "Phase H",
+      "entrypoints": [
+        "scripts/execution-timer.sh",
+        "scripts/execution-time-contract.sh",
+        "scripts/loop-continuation-gate.sh",
+        "scripts/time-estimation-calibration.sh",
+        "scripts/loop-closeout.sh",
+        "scripts/multica-loop.sh"
+      ],
+      "configs": [
+        "config/timebox-policy.json"
+      ],
+      "evidence_outputs": [
+        "runs/<run-id>/continuation-gate.md",
+        "runs/<run-id>/continuation-gate.json",
+        "runs/<run-id>/time-estimation-calibration.md",
+        "runs/<run-id>/time-estimation-calibration.json",
+        "runs/<run-id>/execution-time-contract.md",
+        "runs/<run-id>/execution-time-contract.json",
+        "runs/<run-id>/timers/<slice>.start.json",
+        "runs/<run-id>/execution-time-contract-<slice>.md",
+        "runs/<run-id>/execution-time-contract-<slice>.json"
+      ],
+      "docs": [
+        "docs/ai-work-orchestration/25-execution-time-contract.md",
+        "docs/ai-work-orchestration/share/time-estimation-calibration-guide.md",
+        "docs/ai-work-orchestration/share/sinan-continuous-execution-guide.md"
+      ],
+      "verification": [
+        "scripts/verify-toolchain.sh --case <issue> --pattern <run-id> --strict --state-gate",
+        "scripts/execution-timer.sh start/close stale marker guard"
+      ],
+      "side_effect_policy": "local-only; use scripts/execution-timer.sh start/close for repo-backed slices, estimate before execution, report actual elapsed time after execution, and only timing_source=timestamp is trusted calibration evidence; time-estimation-calibration falls back to execution-time-contract*.json when continuation-gate.json is absent"
+    },
+    {
+      "id": "token_output_compression",
+      "name": "输出压缩与长上下文节流",
+      "status": "ready",
+      "phase": "Phase H",
+      "entrypoints": [],
+      "external_tools": [
+        "~/.agents/skills/caveman/SKILL.md",
+        "~/.agents/skills/cavecrew/SKILL.md",
+        "~/.agents/skills/caveman-commit/SKILL.md",
+        "~/.agents/skills/caveman-review/SKILL.md",
+        "~/.agents/skills/caveman-compress/SKILL.md",
+        "~/.agents/skills/caveman-help/SKILL.md",
+        "~/.agents/skills/caveman-stats/SKILL.md"
+      ],
+      "configs": [
+        "config/token-efficiency-policy.json"
+      ],
+      "evidence_outputs": [
+        "npx skills list --global -a codex --json",
+        "final response token discipline / caveman mode when requested or token efficiency is material"
+      ],
+      "docs": [
+        "docs/ai-work-orchestration/21-local-operating-protocol.md",
+        "docs/ai-work-orchestration/share/sinan-continuous-execution-guide.md",
+        "references/token-governance.md",
+        "docs/ai-work-orchestration/29-token-efficiency.md"
+      ],
+      "verification": [
+        "npx skills list --global -a codex --json",
+        "scripts/sinan-capability-check.sh",
+        "scripts/verify-toolchain.sh --case <issue> --pattern <run-id> --strict --state-gate",
+        "scripts/token-efficiency-audit.sh --run-id <run-id>"
+      ],
+      "side_effect_policy": "global Codex skill install requires explicit approval; after installation, usage is output-format only and must not compress safety warnings, irreversible confirmations, code, commits, PR text, or evidence facts"
+    },
+    {
+      "id": "evidence_closeout",
+      "name": "证据收口与复核包",
+      "status": "ready",
+      "phase": "Phase B",
+      "entrypoints": [
+        "scripts/collect-evidence.sh",
+        "scripts/refresh-run-evidence.sh",
+        "scripts/evidence-checklist.sh",
+        "scripts/evidence-index.sh",
+        "scripts/review-packet.sh",
+        "scripts/loop-closeout.sh",
+        "scripts/phase-i-task-queue.sh"
+      ],
+      "configs": [
+        "config/evidence-artifacts.json"
+      ],
+      "evidence_outputs": [
+        "runs/<run-id>/evidence-checklist.md",
+        "runs/<run-id>/evidence-index.md",
+        "runs/<run-id>/review-packet.md",
+        "runs/<run-id>/closeout/closeout-summary.md",
+        "runs/<run-id>/evidence-summary.md",
+        "runs/<run-id>/evidence-summary.json",
+        "runs/<run-id>/continuation-gate.md",
+        "runs/<run-id>/continuation-gate.json",
+        "runs/<run-id>/execution-time-contract.md",
+        "runs/<run-id>/execution-time-contract.json",
+        "runs/<run-id>/time-estimation-calibration.md",
+        "runs/<run-id>/time-estimation-calibration.json",
+        "runs/<run-id>/phase-i-task-queue.md",
+        "runs/<run-id>/phase-i-task-queue.json",
+        "runs/<run-id>/timers/<slice>.start.json",
+        "runs/<run-id>/execution-time-contract-<slice>.json",
+        "runs/<run-id>/evidence-summary.json.artifact_registry",
+        "runs/<run-id>/evidence-checklist.md.required_by_task_type",
+        "runs/<run-id>/evidence-index.md.registry_groups"
+      ],
+      "docs": [
+        "docs/ai-work-orchestration/10-evidence-standard.md",
+        "docs/ai-work-orchestration/05-case-playbook.md",
+        "docs/ai-work-orchestration/25-execution-time-contract.md",
+        "docs/ai-work-orchestration/share/time-estimation-calibration-guide.md",
+        "docs/ai-work-orchestration/share/sinan-continuous-execution-guide.md",
+        "docs/ai-work-orchestration/27-evidence-schema.md"
+      ],
+      "verification": [
+        "scripts/verify-toolchain.sh --case <issue> --pattern <run-id> --strict",
+        "scripts/phase-i-task-queue.sh --run-id <run-id> --target-minutes 30",
+        "python3 -m json.tool config/evidence-artifacts.json",
+        "collect-evidence artifact_registry assertions"
+      ],
+      "side_effect_policy": "local-only evidence generation; structured evidence-summary includes registry-backed artifact groups, continuation gate, all execution time contract accuracy fields, time estimation calibration, and task-type-specific required evidence"
+    },
+    {
+      "id": "controlled_writeback",
+      "name": "受控写回与审批边界",
+      "status": "ready",
+      "phase": "Phase E",
+      "entrypoints": [
+        "scripts/approval-boundary.sh",
+        "scripts/writeback-gate.sh",
+        "scripts/metadata-writeback.sh",
+        "scripts/writeback-summary-json.sh",
+        "scripts/smoke-multica-writeback.sh"
+      ],
+      "configs": [
+        "config/approval-boundary.json"
+      ],
+      "evidence_outputs": [
+        "runs/<run-id>/approval-boundary-comment.md",
+        "runs/<run-id>/approval-boundary-metadata.md",
+        "runs/<run-id>/writeback-summary.md",
+        "runs/<run-id>/writeback-summary.json"
+      ],
+      "docs": [
+        "docs/ai-work-orchestration/16-controlled-writeback-policy.md",
+        "docs/ai-work-orchestration/12-issue-metadata-contract.md"
+      ],
+      "verification": [
+        "scripts/smoke-multica-writeback.sh --issue <issue>",
+        "scripts/verify-toolchain.sh --case <issue> --pattern <run-id>"
+      ],
+      "side_effect_policy": "remote writes require explicit approval and readback evidence"
+    },
+    {
+      "id": "obsidian_knowledge_sync",
+      "name": "Obsidian 知识沉淀",
+      "status": "ready",
+      "phase": "Phase D",
+      "entrypoints": [
+        "scripts/obsidian-sync.sh",
+        "scripts/daily-ops-sync.sh"
+      ],
+      "configs": [
+        "config/approval-boundary.json"
+      ],
+      "evidence_outputs": [
+        "/mnt/d/JAVA/knowledge/tiandao/99-generated/loop/runs/<run-id>.md",
+        "/mnt/d/JAVA/knowledge/tiandao/99-generated/loop/ai-loop-docs-index.md"
+      ],
+      "docs": [
+        "docs/ai-work-orchestration/22-obsidian-self-evolution.md",
+        "docs/ai-work-orchestration/share/sinan-v0.2-workbench-overview.md"
+      ],
+      "verification": [
+        "scripts/verify-toolchain.sh --case <issue> --pattern <run-id> --strict --state-gate"
+      ],
+      "side_effect_policy": "standing approval for Obsidian 99-generated only; no operation log required by default"
+    },
+    {
+      "id": "phase_c_organization_layer",
+      "name": "Multica Loop 组织层",
+      "status": "in_progress",
+      "phase": "Phase C",
+      "entrypoints": [
+        "scripts/classify-task.sh",
+        "scripts/route-actor.sh",
+        "scripts/loop-intake-gate.sh",
+        "scripts/gate-policy-check.sh",
+        "scripts/approval-boundary.sh",
+        "scripts/review-packet.sh"
+      ],
+      "configs": [
+        "config/gate-policy.json",
+        "config/timebox-policy.json",
+        "config/approval-boundary.json",
+        "config/routing-policy.json",
+        "config/organization-policy.json"
+      ],
+      "evidence_outputs": [
+        "docs/ai-work-orchestration/26-phase-cd-organization-memory-plan.md",
+        "runs/<run-id>/phase-cd-task-board.md",
+        "runs/<run-id>/phase-cd-task-board.json",
+        "runs/<run-id>/route-result.json",
+        "runs/<run-id>/gate-policy-check.json.contract=policy-report.v1",
+        "runs/<run-id>/approval-boundary-*.json.contract=side-effect-manifest.v1",
+        "runs/<run-id>/state-evaluation.json.contract=review-orchestration.v1",
+        "runs/<run-id>/execution-preflight.json.organization_contract"
+      ],
+      "docs": [
+        "docs/ai-work-orchestration/26-phase-cd-organization-memory-plan.md",
+        "docs/ai-work-orchestration/11-loop-state-machine.md",
+        "docs/ai-work-orchestration/16-controlled-writeback-policy.md",
+        "docs/ai-work-orchestration/28-organization-contracts.md"
+      ],
+      "verification": [
+        "scripts/north-star-task-board.sh --tasks config/phase-cd-tasks.json --run-id <run-id>",
+        "scripts/verify-toolchain.sh --case <issue> --pattern <run-id> --strict --state-gate",
+        "route/policy/side-effect/review contract assertions",
+        "organization-policy-report contracts section"
+      ],
+      "side_effect_policy": "local organization evidence only; Feishu/Multica writeback remains human approved"
+    },
+    {
+      "id": "phase_d_project_memory",
+      "name": "L2 项目记忆质量治理",
+      "status": "in_progress",
+      "phase": "Phase D",
+      "entrypoints": [
+        "scripts/memory-query.sh",
+        "scripts/recommend-memory.sh",
+        "scripts/extract-experience.sh",
+        "scripts/memory-quality-check.sh"
+      ],
+      "configs": [
+        "config/project-memory-policy.json"
+      ],
+      "evidence_outputs": [
+        "runs/<run-id>/memory-quality-report.md",
+        "runs/<run-id>/memory-quality-report.json",
+        "memory/cases/FUZ-554-north-star-task-board.md"
+      ],
+      "docs": [
+        "docs/ai-work-orchestration/15-project-memory-model.md",
+        "docs/ai-work-orchestration/26-phase-cd-organization-memory-plan.md",
+        "memory/README.md"
+      ],
+      "verification": [
+        "scripts/memory-quality-check.sh --output <file> --json-output <file>",
+        "scripts/memory-query.sh --search north-star"
+      ],
+      "side_effect_policy": "local memory files only; generated Obsidian sync is preapproved"
+    },
+    {
+      "id": "token_efficiency_governance",
+      "name": "Token 使用率治理",
+      "status": "ready",
+      "phase": "v1.2/v1.4/v1.7",
+      "entrypoints": [
+        "scripts/token-efficiency-audit.sh"
+      ],
+      "configs": [
+        "config/token-efficiency-policy.json"
+      ],
+      "evidence_outputs": [
+        "runs/<run-id>/token-efficiency-audit.md",
+        "runs/<run-id>/token-efficiency-audit.json",
+        "runs/<run-id>/token-efficiency-baseline.md"
+      ],
+      "docs": [
+        "docs/ai-work-orchestration/29-token-efficiency.md",
+        "docs/ai-work-orchestration/product/sinan-token-efficiency-loop-plan.md",
+        "memory/templates/token-efficient-handoff-template.md",
+        "references/token-governance.md"
+      ],
+      "verification": [
+        "scripts/token-efficiency-audit.sh --run-id <run-id>",
+        "scripts/sinan-v2-acceptance.sh --run-id <run-id>"
+      ],
+      "side_effect_policy": "local-only audit; never reads network or writes external systems"
+    },
+    {
+      "id": "adaptive_flow_advisor",
+      "name": "轻重流程自适应建议",
+      "status": "ready",
+      "phase": "v1.3/v1.8",
+      "entrypoints": [
+        "scripts/sinan-flow-advisor.sh"
+      ],
+      "configs": [
+        "config/routing-policy.json",
+        "config/gate-policy.json",
+        "config/approval-boundary.json"
+      ],
+      "evidence_outputs": [
+        "runs/<run-id>/flow-advice.md",
+        "runs/<run-id>/flow-advice.json"
+      ],
+      "docs": [
+        "docs/ai-work-orchestration/product/sinan-v1-to-v2-roadmap.md"
+      ],
+      "verification": [
+        "scripts/sinan-flow-advisor.sh --task <task-file>"
+      ],
+      "side_effect_policy": "advisory only; does not execute or approve side effects"
+    },
+    {
+      "id": "v2_acceptance_platformization",
+      "name": "v2.0 可复制平台验收",
+      "status": "ready",
+      "phase": "v1.7-v2.0",
+      "entrypoints": [
+        "scripts/sinan-v2-acceptance.sh",
+        "scripts/sinan-ops-dashboard.sh",
+        "scripts/multi-repo-evidence.sh",
+        "scripts/external-adapter-check.sh",
+        "scripts/sinan.sh"
+      ],
+      "configs": [
+        "config/sinan-version.json"
+      ],
+      "evidence_outputs": [
+        "runs/<run-id>/v2-acceptance.md",
+        "runs/<run-id>/v2-acceptance.json",
+        "runs/<run-id>/ops-dashboard.md",
+        "runs/<run-id>/multi-repo-evidence.md"
+      ],
+      "docs": [
+        "docs/ai-work-orchestration/product/sinan-onboarding-drill.md",
+        "docs/ai-work-orchestration/product/cross-repo-evidence-contract.md",
+        "docs/ai-work-orchestration/product/sinan-v1-to-v2-roadmap.md"
+      ],
+      "verification": [
+        "scripts/sinan-v2-acceptance.sh --run-id <run-id>",
+        "scripts/sinan.sh v2-acceptance --run-id <run-id>"
+      ],
+      "side_effect_policy": "local-only acceptance and inventory; remote Git/deploy/production remain prohibited without approval"
+    },
+    {
+      "id": "ponytail_cn_coding",
+      "name": "Ponytail-CN minimal coding capability",
+      "status": "ready",
+      "phase": "Holo/Sinan coding slice support",
+      "entrypoints": [
+        "/home/user/.codex/skills/ponytail-cn/SKILL.md",
+        "references/ponytail-cn-coding.md",
+        "scripts/sinan-ponytail-route.sh",
+        "skills/ponytail-cn/SKILL.md"
+      ],
+      "configs": [],
+      "docs": [
+        "references/ponytail-cn-coding.md",
+        "docs/ai-work-orchestration/29-token-efficiency.md"
+      ],
+      "evidence_outputs": [
+        "runs/<run-id>/summary.md",
+        "runs/<run-id>/ponytail-cn-coding-handoff.md",
+        "validation command output recorded in run evidence"
+      ],
+      "verification": [
+        "python3 /home/user/.codex/skills/.system/skill-creator/scripts/quick_validate.py /home/user/.codex/skills/ponytail-cn",
+        "python3 -m json.tool config/sinan-capabilities.json",
+        "scripts/sinan-ponytail-route.sh --run-id <run-id> --task <text>",
+        "python3 /home/user/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/ponytail-cn"
+      ],
+      "side_effect_policy": "local skill instructions only; do not install upstream hooks or remote plugins without explicit approval; coding slices remain subject to Sinan side-effect gates"
+    }
+  ],
+  "configs": [
+    "config/token-efficiency-policy.json"
+  ],
+  "docs": [
+    "references/token-governance.md",
+    "docs/ai-work-orchestration/29-token-efficiency.md"
+  ],
+  "verification": [
+    "scripts/token-efficiency-audit.sh --run-id <run-id>"
+  ]
+}
