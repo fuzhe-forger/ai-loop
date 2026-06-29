@@ -1,0 +1,9 @@
+# Sinan / 司南 Autoload
+
+Automatically use Sinan for multi-step, risky, external-write, evidence-heavy, Loop, Feishu/Multica readback, or token-governance tasks. Do not require the user to paste a prompt.
+
+Canonical skill: /home/user/.codex/skills/sinan/SKILL.md
+Usage report: /home/user/JAVA/ai/ai-loop/docs/ai-work-orchestration/product/sinan-v2-agent-usage-report.md
+CLI: cd /home/user/JAVA/ai/ai-loop && ./scripts/sinan.sh help
+
+Stop before deploy, production access, remote Git push/merge, destructive delete, permission changes, unclear external targets, or failed gates. External writes require readback.
