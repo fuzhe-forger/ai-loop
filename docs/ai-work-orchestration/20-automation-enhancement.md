@@ -276,6 +276,14 @@ Phase G 只实现：
 - ❌ 向量搜索
 - ❌ LLM 微调
 
+### 自动化边界
+
+- 不做自动 reviewer 结论：自动化只能准备 evidence、候选风险和复核包，最终 reviewer 结论由人或明确授权角色给出。
+- 不做自动回写决策：Feishu、Multica、Git remote、部署、工具安装、Codex 配置修改都必须走 approval boundary。
+- 不做自动远端副作用：分类、计划生成、经验提取、记忆推荐只产生本地文件或本地建议。
+- 不绕过澄清门禁：当任务描述模糊或验收缺失时，preflight 必须阻断而不是自动猜测执行。
+- 不把建议当事实：recommend-memory 和 generate-plan 输出是 draft，必须经过执行前复核。
+
 ### AI 接入方式
 
 **方式 1：本地 LLM（推荐 MVP）**

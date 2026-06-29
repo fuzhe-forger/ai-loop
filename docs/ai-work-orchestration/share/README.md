@@ -72,11 +72,13 @@
 阅读：
 
 - `demo-script.md`
+- `sinan-demo-script.md`
 
 用途：
 
 - 指导现场演示命令。
 - 演示 `collect-evidence`、`refresh-run-evidence`、`verify-toolchain --strict --state-gate`、scope split 等稳定 artifacts。
+- 演示司南从 preflight、evidence、share-preflight 到 approval boundary 的 5 分钟闭环。
 - 避免依赖 live coding。
 
 ### 7. 会前预检
@@ -91,6 +93,18 @@
 - 优先使用 `scripts/share-preflight.sh` 一键生成 refresh、verification、review packet。
 - 避免把无关草稿混进本次分享。
 - 现场命令失败时切到历史 evidence。
+
+### 8. 复制到新任务
+
+阅读：
+
+- `sinan-best-practices-templates.md`
+- `../../../../memory/templates/sinan-task-execution-template.md`
+
+用途：
+
+- 把任务拆分、估时、证据、交接、审批模板复制到新需求。
+- 让新任务默认带有 readback、审批边界和交接摘要。
 
 ## 分享主线
 
@@ -134,13 +148,24 @@ Artifacts & Memory：知识沉淀层
 | One-page | ready | FUZ-554 快速分享 |
 | Outline | ready | 正式分享大纲 |
 | Demo script | rehearsed | 已彩排并修正注意点 |
+| Sinan demo script | ready | 5 分钟司南闭环演示 |
 | Slide deck structure | ready | 可转 PPT |
 | Slides content | ready | 可直接制作 PPT 的上屏内容 |
 | Speaker notes | ready | 可排练讲稿 |
 | Preflight checklist | ready | 会前材料、命令、fallback 检查 |
+| Best practice templates | ready | 新任务复制模板 |
+| Continuous execution guide | ready | 执行/继续/Loop 场景下避免早停 |
+| Time estimation calibration guide | ready | 可信计时、估时偏差和下次估时建议 |
+| Sinan v1.0 release notes | ready | `sinan-v1.0-release-notes.md` 发布口径和已知限制索引 |
+| Sinan capability registry | ready | `config/sinan-capabilities.json` 统一聚合能力入口、证据和验证 |
+| Execution time contract | ready | 开工估时、收工真实用时复盘和下次校准 |
 
 ## 下一步
 
 - 如果要正式对外/对团队分享：先按 `preflight-checklist.md` 预检，再制作 PPT。
 - 如果要内部试讲：按 `speaker-notes.md` + `demo-script.md` 彩排。
+- 如果要长时间连续推进：按 `sinan-continuous-execution-guide.md` 跑 timebox、closeout 和 continuation gate。
+- 如果要复盘估时偏差：优先读取 closeout 自动生成的 `time-estimation-calibration.md/json`；必要时再按 `time-estimation-calibration-guide.md` 重跑。
+- 如果要新增或调整司南能力：先改 `config/sinan-capabilities.json`，再跑 `scripts/sinan-capability-check.sh` 和 `verify-toolchain`。
+- 如果要规范每轮执行：按 `../25-execution-time-contract.md` 强制开工估时和收工用时复盘。
 - 如果要继续工程推进：优先做 Multica Loop 状态机和 evidence 标准化。

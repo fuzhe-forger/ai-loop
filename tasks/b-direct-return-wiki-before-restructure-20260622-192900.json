@@ -1,0 +1,6 @@
+{
+  "error": "request trigger frequency limit",
+  "code": 99991400,
+  "log_id": "202606221928559EBE782B1F03F6DCC7D5",
+  "troubleshooter": "排查建议查看(Troubleshooting suggestions): https://open.feishu.cn/search?from=openapi&log_id=202606221928559EBE782B1F03F6DCC7D5&code=99991400&method_id=7018092352167395329"
+}

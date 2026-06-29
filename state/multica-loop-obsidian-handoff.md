@@ -1,6 +1,6 @@
 # Multica × ai-loop × Obsidian 当前交接
 
-更新时间：2026-06-16 14:40 +08:00
+更新时间：2026-06-18 09:58 +08:00
 
 ## 当前目标
 
@@ -23,14 +23,14 @@
 
 ### 智能体
 
-- 黑墙已迁移到 Codex runtime：`6c8a154b-504d-4aad-94a6-fe7e2a537621`。
+- 黑墙已迁移到 Codex runtime：`35dfe9f6-af7e-40ff-83d5-464e037c5f49`。
 - `黑墙-Opus` 已归档：`c0e22dac-fed1-48d0-8219-5691bf5d12de`。
 - `流窜AI` 已归档：`a5c71bc5-90c3-4c07-b976-db7f13798e75`。
 - `陆码`、`陈码`、`傅喆的虾`、`文渊`、`颜回` 保留未归档。
 
 ### Multica runtime
 
-- 当前可用在线 Codex runtime：`6c8a154b-504d-4aad-94a6-fe7e2a537621`，名称 `Codex (5423225PE00307)`。
+- 当前可用在线 Codex runtime：`35dfe9f6-af7e-40ff-83d5-464e037c5f49`，名称 `Codex (5423825N800055)`。
 - 仍可见 Claude runtime 在线，但治理方向是不再作为主要调度运行时。
 
 ### Multica autopilot
@@ -55,8 +55,9 @@
   - `99-generated/loop/runs/*.md`
   - `99-generated/codegraph/repositories.md`
   - `99-generated/codegraph/repositories/*.md`
-- CodeGraph 仓库卡片验证数量：25。
-- archived issue 页面验证：已归档总数 70，最近 7 天展示 13 条。
+- 2026-06-18 手动同步验证：项目 13 个，活跃 Issue 53 个，已归档 Issue 502 个，最近 7 天展示 31 条。
+- 2026-06-18 手动同步验证：Runtime 10 个（online 4 个），智能体 18 个，Autopilot 20 个（active 1 个、paused 19 个）。
+- 2026-06-18 手动同步验证：Multica 可读摘要卡 84 张，CodeGraph 仓库卡片 25 张。
 
 ### ai-loop 脚本
 
@@ -70,6 +71,10 @@
   - 支持 `ARCHIVED_ISSUE_RETENTION_DAYS`，默认 7 天。
   - 已归档 issue 输出只展示最近 7 天。
   - 写入 Obsidian `99-generated/`，不覆盖人工文档区。
+  - 2026-06-18 修复 cron 环境 PATH：显式加入 `/usr/local/bin` 和 `/home/user/.local/bin`。
+  - 2026-06-18 增加 `multica` CLI 缺失时 fail-fast，避免再次写入空快照。
+- `scripts/daily-ops-sync.sh`
+  - 2026-06-18 修复 cron 环境 PATH 与 HOME，已手动执行验证成功。
 
 ### crontab
 
@@ -91,11 +96,12 @@
 
 ## 推荐下一步
 
-1. 确认是否暂停 Multica 里仍 active 的 `每日文档聚合汇总`。
-2. 把 `运营巡检与效能报告` 项目作为日报/巡检/自检沉淀入口。
-3. 后续所有自动报告由 crontab 调 `daily-ops-sync.sh`，不要再恢复 Claude autopilot。
-4. 人工整理内容写入 Obsidian 非 `99-generated/` 区；自动生成内容只放 `99-generated/`。
-5. 若其他窗口接手，先读取本文件，然后运行：
+1. 确认是否暂停 Multica 里仍 active 的 `每日文档聚合汇总`（需要显式确认后再写 Multica）。
+2. 检查 53 个活跃 Issue 的项目归属，优先处理未归属与 blocked。
+3. 把 `运营巡检与效能报告` 项目作为日报/巡检/自检沉淀入口。
+4. 后续所有自动报告由 crontab 调 `daily-ops-sync.sh`，不要再恢复 Claude autopilot。
+5. 人工整理内容写入 Obsidian 非 `99-generated/` 区；自动生成内容只放 `99-generated/`。
+6. 若其他窗口接手，先读取本文件，然后运行：
 
 ```bash
 cd /home/user/JAVA/ai/ai-loop

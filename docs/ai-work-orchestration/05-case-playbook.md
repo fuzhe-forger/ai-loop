@@ -90,6 +90,8 @@
 
 该脚本只读取本地 `runs/` 目录，不访问 Multica，也不会产生远端写入。
 
+正式 closeout 后，证据清单应能看到 `execution-time-contract.md/json`。它记录开工估时、实际用时、偏差和下一轮估时建议，用于避免凭感觉汇报执行时长。
+
 当一个案例包含多个 run 时，可以生成汇总索引：
 
 ```bash
@@ -103,6 +105,8 @@
 ```
 
 该脚本同样只读取本地 `runs/` 目录，不访问 Multica，也不会产生远端写入。
+
+汇总索引中的 `Time Contract` 列用于快速判断某个 run 是否已经具备可信耗时复盘证据；旧 run 可以缺失，新 closeout run 应尽量补齐。
 
 ### 5. 复盘与决策
 
@@ -132,6 +136,8 @@
 ./scripts/review-packet.sh --case FUZ-554 --pattern 'FUZ-554*' --include-patch-summary runs/<run-id>/patch-summary.md --output runs/<run-id>/review-packet.md
 ```
 
+如果某个 run 已完成 comment/status/metadata 写回，`Review Packet` 的 `Approval Boundary` 列必须显示对应审批证据，例如 `comment:yes` 或 `metadata:yes`。
+
 复核包用于辅助人类判断是否可分享、是否缺证据、是否需要远端回写；它不代表自动批准。
 
 复用这套本地工具链前，可以先运行总自检：
@@ -159,6 +165,16 @@
 ```bash
 ./scripts/verify-toolchain.sh --case FUZ-554 --pattern 'FUZ-554*' --strict --output runs/<run-id>/verification-report.md
 ```
+
+分享前建议运行一页式预检摘要：
+
+```bash
+./scripts/share-preflight.sh --case FUZ-554 --pattern 'FUZ-554*' --golden-run-id <run-id> --persist-to-run
+```
+
+先看 `share-preflight-summary.md`：它必须展示 `Golden path failed checks: 0`，并在 `Approval Boundary` 小节列出已完成写回对应的审批证据快照；同时检查 `share-preflight-summary.json` 中 `golden_path.failed_checks = 0` 和 `approval_boundary` 非空。
+
+`golden-path-check` 会把 `execution-time-contract.md/json`、`time-estimation-calibration.md/json` 和 `evidence-summary.json` 中的计时证据条目纳入最终门禁；完成态 run 不应缺少这些证据。
 
 进入真实代码改动后，应为 patch 生成本地摘要：
 

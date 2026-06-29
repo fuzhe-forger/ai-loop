@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "issue": "FUZ-554",
+  "task_type": "local_script_patch",
+  "risk": "medium",
+  "risk_level": "medium",
+  "tier": "L2",
+  "needs_clarification": false,
+  "requires_clarification": false,
+  "estimated_complexity": "medium",
+  "confidence": 0.85,
+  "reasoning": "matched rules: local_script, documentation",
+  "classification_method": "heuristic",
+  "automation_boundary": {
+    "auto_execute": false,
+    "auto_writeback_decision": false,
+    "auto_reviewer": false
+  },
+  "timestamp": "2026-06-29T01:42:30Z"
+}
