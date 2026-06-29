@@ -32,6 +32,7 @@ class SafetyRequest:
 class SafetyResult:
     passed: bool
     changed_files: list[str]
+    untracked_files: list[str]
     diff_lines: int
     forbidden_paths_hit: list[str]
     errors: list[str]
@@ -57,6 +58,7 @@ def run_safety(request: SafetyRequest) -> SafetyResult:
     result = SafetyResult(
         passed=not errors,
         changed_files=changed_files,
+        untracked_files=request.diff.untracked_files,
         diff_lines=diff_lines,
         forbidden_paths_hit=forbidden_paths_hit,
         errors=errors,
@@ -68,6 +70,7 @@ def run_safety(request: SafetyRequest) -> SafetyResult:
             "iteration": request.iteration,
             "passed": result.passed,
             "changed_files": result.changed_files,
+            "untracked_files": result.untracked_files,
             "diff_lines": result.diff_lines,
             "forbidden_paths_hit": result.forbidden_paths_hit,
             "errors": result.errors,

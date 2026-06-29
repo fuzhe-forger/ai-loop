@@ -21,6 +21,19 @@
 
 人工在 `memory/` 下新增或修改 markdown 文件，并更新 `index.json`。
 
+经验案例的 `review_state` 使用本地 helper 流转，默认 dry-run：
+
+```bash
+./scripts/extract-experience.sh --run-id <run-id> --promote-to-memory
+./scripts/phase-d-closeout.sh --run-id <run-id>
+./scripts/memory-promote-draft.sh --case-draft <draft.md> --index-entry <entry.json>
+./scripts/memory-promote-draft.sh --case-draft <draft.md> --index-entry <entry.json> --execute
+./scripts/memory-review-state.sh --case-id <case-id> --from draft --to reviewed
+./scripts/memory-review-state.sh --case-id <case-id> --from reviewed --to accepted --execute
+```
+
+允许流转由 `config/project-memory-policy.json` 的 `review_state_transitions` 定义；执行后运行 `./scripts/memory-quality-check.sh` 验证索引质量。
+
 ---
 
 **项目**：ai-loop  

@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "default_tier": "L1",
+  "auto_tier": {
+    "with_issue_and_run_id": "L2",
+    "fallback": "L1"
+  },
+  "tiers": {
+    "L0": {
+      "minimum_continuous_minutes": 0,
+      "anti_idle_floor_minutes": 0,
+      "acceptable_variance_ratio": 0.5,
+      "stop_rule": "stop only if user facts are required"
+    },
+    "L1": {
+      "minimum_continuous_minutes": 30,
+      "anti_idle_floor_minutes": 0,
+      "acceptable_variance_ratio": 0.5,
+      "stop_rule": "continue until one verified slice or 30 minutes"
+    },
+    "L2": {
+      "minimum_continuous_minutes": 90,
+      "anti_idle_floor_minutes": 30,
+      "acceptable_variance_ratio": 0.5,
+      "stop_rule": "continue until closeout/writeback or 90 minutes; do not stop on small milestones"
+    },
+    "L3": {
+      "minimum_continuous_minutes": 120,
+      "anti_idle_floor_minutes": 45,
+      "acceptable_variance_ratio": 0.5,
+      "stop_rule": "continue until phase closeout or 120 minutes unless high-risk approval boundary appears"
+    },
+    "L4": {
+      "minimum_continuous_minutes": 0,
+      "anti_idle_floor_minutes": 0,
+      "acceptable_variance_ratio": 0.5,
+      "stop_rule": "stop for separate approval"
+    }
+  }
+}

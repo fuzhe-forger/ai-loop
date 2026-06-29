@@ -59,6 +59,57 @@ make_job_id() {
   printf '%s-async-%s-%s' "$(date +%Y%m%d-%H%M%S)" "$(slug "$loop_command")" "$(random_hex)"
 }
 
+validate_id() {
+  local field="$1"
+  local value="$2"
+  if [[ ! "$value" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$ ]]; then
+    die "$field must match ^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+  fi
+}
+
+extract_run_id() {
+  local previous=""
+  for arg in "$@"; do
+    if [ "$previous" = "--run-id" ]; then
+      printf '%s\n' "$arg"
+      return 0
+    fi
+    previous="$arg"
+  done
+}
+
+write_cancel_marker() {
+  local repo="$1"
+  local dir="$2"
+  local job_id="$3"
+  local run_id=""
+  [ -f "${dir}/run_id" ] && run_id="$(cat "${dir}/run_id")"
+  [ -n "$run_id" ] || return 0
+  local run_dir="${repo}/runs/${run_id}"
+  mkdir -p "$run_dir"
+  cat >"${run_dir}/cancelled.json" <<EOF
+{
+  "schema_version": 1,
+  "status": "CANCELLED",
+  "job_id": "${job_id}",
+  "run_id": "${run_id}",
+  "cancelled_at": "$(iso_now)",
+  "async_job_dir": "${dir}"
+}
+EOF
+  cat >"${run_dir}/summary.md" <<EOF
+# AI Loop Async Cancellation
+
+- Run ID: \`${run_id}\`
+- Job ID: \`${job_id}\`
+- Status: \`CANCELLED\`
+- Async job dir: \`${dir}\`
+- Cancelled at: $(iso_now)
+
+The async wrapper stopped the process group. Inspect the workspace and run artifacts before retrying or cleaning up.
+EOF
+}
+
 parse_repo() {
   local repo=""
   while [ "$#" -gt 0 ]; do
@@ -178,12 +229,20 @@ cmd_start() {
   esac
 
   [ -n "$job_id" ] || job_id="$(make_job_id "$loop_command")"
+  validate_id "job-id" "$job_id"
   local root dir
   root="$(state_root "$repo")"
   dir="$(job_dir "$repo" "$job_id")"
   mkdir -p "$root"
   [ ! -e "$dir" ] || die "job already exists: $job_id"
   mkdir -p "$dir"
+
+  local run_id
+  run_id="$(extract_run_id "$@")"
+  if [ -n "$run_id" ]; then
+    validate_id "run-id" "$run_id"
+    printf '%s\n' "$run_id" >"${dir}/run_id"
+  fi
 
   write_command_script "${dir}/command.sh" "$AI_LOOP" "$loop_command" --repo "$repo" "$@"
   write_runner_script "${dir}/runner.sh"
@@ -341,6 +400,7 @@ cmd_stop() {
   echo "STOPPED" >"${dir}/status"
   echo "130" >"${dir}/exit_code"
   date -Is >"${dir}/finished_at"
+  write_cancel_marker "$repo" "$dir" "$1"
   echo "job_id: $1"
   echo "status: STOPPED"
 }

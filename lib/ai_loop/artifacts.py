@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -13,7 +14,7 @@ def now_iso() -> str:
 
 
 def write_json(path: Path, data: dict[str, Any]) -> None:
-    path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    write_text(path, json.dumps(data, ensure_ascii=False, indent=2) + "\n")
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -21,7 +22,13 @@ def read_json(path: Path) -> dict[str, Any]:
 
 
 def write_text(path: Path, content: str) -> None:
-    path.write_text(content, encoding="utf-8")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_name(f".{path.name}.tmp-{os.getpid()}")
+    with tmp_path.open("w", encoding="utf-8") as tmp_file:
+        tmp_file.write(content)
+        tmp_file.flush()
+        os.fsync(tmp_file.fileno())
+    tmp_path.replace(path)
 
 
 def update_run(run_dir: Path, **updates: Any) -> dict[str, Any]:
@@ -31,4 +38,3 @@ def update_run(run_dir: Path, **updates: Any) -> dict[str, Any]:
     data["updated_at"] = now_iso()
     write_json(run_path, data)
     return data
-

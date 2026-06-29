@@ -5,16 +5,17 @@ show_help() {
   cat <<'HELP'
 Usage: scripts/writeback-gate.sh --issue <issue> --run-id <run-id> --type <type> [options]
 
-Check writeback preconditions before writing to Multica.
+Check writeback preconditions before writing to Multica or Feishu.
 
 Options:
-  --issue <issue>     Issue identifier, required
-  --run-id <run-id>   Run identifier, required
-  --type <type>       Writeback type: comment | status | metadata, required
-  --policy <policy>   Status policy: conservative | validation | no-status (default: conservative)
-  --approved-by <who> Human approver name (required for metadata)
-  --output <file>     Write gate report to file
-  -h, --help          Show this help
+  --issue <issue>          Issue identifier, required
+  --run-id <run-id>        Run identifier, required
+  --type <type>            Writeback type: comment | status | metadata | feishu, required
+  --policy <policy>        Status policy: conservative | validation | no-status (default: conservative)
+  --approved-by <who>      Human approver name
+  --approval-window <file> Optional batch approval JSON file
+  --output <file>          Write JSON gate report to file
+  -h, --help               Show this help
 HELP
 }
 
@@ -25,6 +26,7 @@ run_id=""
 writeback_type=""
 status_policy="conservative"
 approved_by=""
+approval_window=""
 output_file=""
 
 while [[ $# -gt 0 ]]; do
@@ -39,6 +41,8 @@ while [[ $# -gt 0 ]]; do
       status_policy="${2:-}"; shift 2 ;;
     --approved-by)
       approved_by="${2:-}"; shift 2 ;;
+    --approval-window)
+      approval_window="${2:-}"; shift 2 ;;
     --output)
       output_file="${2:-}"; shift 2 ;;
     -h|--help)
@@ -55,19 +59,13 @@ if [[ -z "$issue_id" || -z "$run_id" || -z "$writeback_type" ]]; then
   show_help
   exit 2
 fi
-
 case "$writeback_type" in
-  comment|status|metadata) ;;
-  *)
-    echo "Invalid --type: $writeback_type (must be comment, status, or metadata)" >&2
-    exit 2 ;;
+  comment|status|metadata|feishu) ;;
+  *) echo "Invalid --type: $writeback_type (must be comment, status, metadata, or feishu)" >&2; exit 2 ;;
 esac
-
 case "$status_policy" in
   conservative|validation|no-status) ;;
-  *)
-    echo "Invalid --policy: $status_policy" >&2
-    exit 2 ;;
+  *) echo "Invalid --policy: $status_policy" >&2; exit 2 ;;
 esac
 
 run_dir="$ROOT_DIR/runs/$run_id"
@@ -75,201 +73,153 @@ if [[ ! -d "$run_dir" ]]; then
   echo "Run directory not found: $run_dir" >&2
   exit 1
 fi
-
 cd "$ROOT_DIR"
 
-gate_result="PASSED"
-gate_reason="all checks passed"
-checks=()
-
-check_core_evidence() {
-  local summary="$run_dir/summary.md"
-  local stage_report="$run_dir/stage-report.md"
-  local comment_draft="$run_dir/multica-comment.md"
-  
-  if [[ -f "$summary" && -f "$stage_report" && -f "$comment_draft" ]]; then
-    checks+=("core_evidence=PASSED")
-  else
-    checks+=("core_evidence=FAILED")
-    gate_result="FAILED"
-    gate_reason="core evidence incomplete"
-  fi
-}
-
-check_strict_gate() {
-  local verification_report="$run_dir/verification-report.md"
-  if [[ -f "$verification_report" ]]; then
-    if rg "Strict Evidence Gate" -A 10 | rg -q "PASSED" "$verification_report"; then
-      checks+=("strict_gate=PASSED")
-    else
-      checks+=("strict_gate=FAILED")
-      gate_result="FAILED"
-      gate_reason="strict gate did not pass"
-    fi
-  else
-    checks+=("strict_gate=MISSING")
-    gate_result="FAILED"
-    gate_reason="verification report missing"
-  fi
-}
-
-check_state_gate() {
-  local verification_report="$run_dir/verification-report.md"
-  if [[ -f "$verification_report" ]]; then
-    if rg "State Metadata Gate" -A 10 | rg -q "PASSED" "$verification_report"; then
-      checks+=("state_gate=PASSED")
-    else
-      checks+=("state_gate=FAILED")
-      gate_result="FAILED"
-      gate_reason="state gate did not pass"
-    fi
-  else
-    checks+=("state_gate=MISSING")
-    gate_result="FAILED"
-    gate_reason="verification report missing"
-  fi
-}
-
-check_draft_exists() {
-  local draft_file=""
-  case "$writeback_type" in
-    comment)
-      draft_file="$run_dir/multica-comment.md" ;;
-    status)
-      draft_file="$run_dir/state-evaluation.json" ;;
-    metadata)
-      draft_file="$run_dir/metadata-draft.json" ;;
-  esac
-  
-  if [[ -f "$draft_file" && -s "$draft_file" ]]; then
-    checks+=("draft_exists=PASSED")
-  else
-    checks+=("draft_exists=FAILED")
-    gate_result="FAILED"
-    gate_reason="draft file missing or empty: $draft_file"
-  fi
-}
-
-check_no_secrets() {
-  local draft_file=""
-  case "$writeback_type" in
-    comment)
-      draft_file="$run_dir/multica-comment.md" ;;
-    metadata)
-      draft_file="$run_dir/metadata-draft.json" ;;
-    *)
-      checks+=("no_secrets=SKIPPED")
-      return ;;
-  esac
-  
-  if [[ ! -f "$draft_file" ]]; then
-    checks+=("no_secrets=SKIPPED")
-    return
-  fi
-  
-  if rg -i "token|password|secret|key|credential|cookie" "$draft_file" >/dev/null 2>&1; then
-    checks+=("no_secrets=FAILED")
-    gate_result="FAILED"
-    gate_reason="draft contains potential secrets"
-  else
-    checks+=("no_secrets=PASSED")
-  fi
-}
-
-check_metadata_format() {
-  if [[ "$writeback_type" != "metadata" ]]; then
-    checks+=("metadata_format=SKIPPED")
-    return
-  fi
-  
-  local metadata_draft="$run_dir/metadata-draft.json"
-  if [[ ! -f "$metadata_draft" ]]; then
-    checks+=("metadata_format=FAILED")
-    gate_result="FAILED"
-    gate_reason="metadata draft missing"
-    return
-  fi
-  
-  if python3 -c "import json; json.load(open('$metadata_draft'))" >/dev/null 2>&1; then
-    checks+=("metadata_format=PASSED")
-  else
-    checks+=("metadata_format=FAILED")
-    gate_result="FAILED"
-    gate_reason="metadata draft invalid JSON"
-  fi
-}
-
-check_human_approval() {
-  if [[ "$writeback_type" != "metadata" ]]; then
-    checks+=("human_approval=SKIPPED")
-    return
-  fi
-  
-  if [[ -n "$approved_by" ]]; then
-    checks+=("human_approval=PASSED:$approved_by")
-  else
-    checks+=("human_approval=FAILED")
-    gate_result="FAILED"
-    gate_reason="metadata writeback requires --approved-by"
-  fi
-}
-
 case "$writeback_type" in
-  comment)
-    check_core_evidence
-    check_draft_exists
-    check_no_secrets
-    ;;
-  status)
-    check_core_evidence
-    check_strict_gate
-    check_state_gate
-    check_draft_exists
-    ;;
-  metadata)
-    check_core_evidence
-    check_strict_gate
-    check_state_gate
-    check_draft_exists
-    check_no_secrets
-    check_metadata_format
-    check_human_approval
-    ;;
+  comment) action="multica-comment"; draft_file="$run_dir/multica-comment.md" ;;
+  status) action="multica-status"; draft_file="$run_dir/state-evaluation.json" ;;
+  metadata) action="multica-metadata"; draft_file="$run_dir/metadata-draft.json" ;;
+  feishu) action="feishu-write"; draft_file="$run_dir/feishu-write-draft.md" ;;
 esac
 
-allowed="true"
-if [[ "$gate_result" == "FAILED" ]]; then
-  allowed="false"
+approval_output="$run_dir/approval-boundary-${writeback_type}.md"
+approval_json_output="$run_dir/approval-boundary-${writeback_type}.json"
+if ! ./scripts/approval-boundary.sh --action "$action" --issue "$issue_id" --run-id "$run_id" ${approved_by:+--approved-by "$approved_by"} ${approval_window:+--approval-window "$approval_window"} --output "$approval_output" --json-output "$approval_json_output" >/tmp/writeback-gate-approval.out 2>/tmp/writeback-gate-approval.err; then
+  approval_allowed="false"
+else
+  approval_allowed="true"
 fi
 
-report_json=$(cat <<JSON
-{
-  "gate": "writeback",
-  "type": "$writeback_type",
-  "issue": "$issue_id",
-  "run_id": "$run_id",
-  "policy": "$status_policy",
-  "result": "$gate_result",
-  "checks": {
-$(printf '    "%s"\n' "${checks[@]}" | sed 's/=/:"/; s/$/"/' | paste -sd ',' -)
-  },
-  "allowed": $allowed,
-  "reason": "$gate_reason",
-  "approved_by": "${approved_by:-null}",
-  "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+json_report="$(python3 - "$ROOT_DIR" "$issue_id" "$run_id" "$writeback_type" "$status_policy" "$approved_by" "$draft_file" "$approval_output" "$approval_json_output" "$approval_allowed" <<'PY'
+import datetime as dt
+import json
+import re
+import sys
+from pathlib import Path
+
+root, issue, run_id, writeback_type, status_policy, approved_by, draft_file, approval_output, approval_json_output, approval_allowed = sys.argv[1:]
+root = Path(root)
+run_dir = root / "runs" / run_id
+checks = []
+result = "PASSED"
+reason = "all checks passed"
+
+def add(name, status, detail=""):
+    global result, reason
+    checks.append({"name": name, "status": status, "detail": detail})
+    if status == "FAILED" and result == "PASSED":
+        result = "FAILED"
+        reason = detail or name
+
+def rel(path):
+    item = Path(path)
+    try:
+        return str(item.relative_to(root))
+    except ValueError:
+        return str(item)
+
+for name in ["summary.md", "stage-report.md", "multica-comment.md"]:
+    path = run_dir / name
+    add(f"core:{name}", "PASSED" if path.is_file() and path.stat().st_size > 0 else "FAILED", rel(path))
+
+if writeback_type in {"metadata", "status"}:
+    verification = run_dir / "verification-report.md"
+    text = verification.read_text(encoding="utf-8", errors="replace") if verification.is_file() else ""
+    add("strict_gate", "PASSED" if "Strict Evidence Gate" in text and "PASSED" in text else "FAILED", rel(verification))
+    add("state_gate", "PASSED" if "State Metadata Gate" in text and "PASSED" in text else "FAILED", rel(verification))
+else:
+    add("strict_gate", "SKIPPED", writeback_type)
+    add("state_gate", "SKIPPED", writeback_type)
+
+draft_path = Path(draft_file)
+if writeback_type == "feishu" and not draft_path.is_file():
+    add("draft_exists", "SKIPPED", "feishu write draft supplied by caller")
+elif draft_path.is_file() and draft_path.stat().st_size > 0:
+    add("draft_exists", "PASSED", rel(draft_path))
+else:
+    add("draft_exists", "FAILED", rel(draft_path))
+
+if draft_path.is_file() and writeback_type in {"comment", "metadata", "feishu"}:
+    text = draft_path.read_text(encoding="utf-8", errors="replace")
+    secret_hit = re.search(r"(?i)(api[_-]?key|password|secret|token|credential|cookie)\s*[:=]", text)
+    add("no_secrets", "FAILED" if secret_hit else "PASSED", secret_hit.group(0) if secret_hit else rel(draft_path))
+else:
+    add("no_secrets", "SKIPPED", writeback_type)
+
+if writeback_type == "metadata" and draft_path.is_file():
+    try:
+        data = json.loads(draft_path.read_text(encoding="utf-8"))
+        ok = bool(data.get("metadata") or data.get("key"))
+    except json.JSONDecodeError:
+        ok = False
+    add("metadata_format", "PASSED" if ok else "FAILED", rel(draft_path))
+else:
+    add("metadata_format", "SKIPPED", writeback_type)
+
+approval = {}
+approval_path = Path(approval_json_output)
+if approval_path.is_file():
+    approval = json.loads(approval_path.read_text(encoding="utf-8"))
+approval_status = "PASSED" if approval_allowed == "true" and approval.get("decision") == "approved_to_proceed" else "FAILED"
+add("human_approval", approval_status, approval.get("approved_by") or "approval required")
+
+readback_targets = {
+    "comment": run_dir / "multica-comment-readback.json",
+    "status": run_dir / "multica-status-readback.json",
+    "metadata": run_dir / "multica-metadata-after.json",
+    "feishu": run_dir / "feishu-readback.json",
 }
-JSON
-)
+readback_path = readback_targets[writeback_type]
+readback_required_after_write = True
+readback_status = "READY" if approval_status == "PASSED" else "BLOCKED_UNTIL_APPROVAL"
+if readback_path.is_file() and readback_path.stat().st_size > 0:
+    readback_status = "PRESENT"
+
+allowed = result == "PASSED"
+report = {
+    "schema_version": 1,
+    "contract": "writeback-gate.v1",
+    "gate": "writeback",
+    "type": writeback_type,
+    "issue": issue,
+    "run_id": run_id,
+    "policy": status_policy,
+    "result": result,
+    "checks": {item["name"]: item["status"] for item in checks},
+    "check_details": checks,
+    "allowed": allowed,
+    "reason": reason,
+    "approved_by": approval.get("approved_by") or approved_by or None,
+    "approval_boundary": {
+        "path": rel(approval_output),
+        "json_path": rel(approval_json_output),
+        "decision": approval.get("decision"),
+        "approval_window_matched": (approval.get("approval_window") or {}).get("matched"),
+    },
+    "readback": {
+        "required_after_write": readback_required_after_write,
+        "status": readback_status,
+        "path": rel(readback_path),
+    },
+    "timestamp": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+}
+print(json.dumps(report, ensure_ascii=False, indent=2))
+PY
+)"
 
 if [[ -n "$output_file" ]]; then
-  echo "$report_json" > "$output_file"
+  mkdir -p "$(dirname "$output_file")"
+  printf '%s\n' "$json_report" > "$output_file"
   echo "writeback_gate_report: $output_file"
 fi
+printf '%s\n' "$json_report"
 
-echo "$report_json"
-
-if [[ "$gate_result" == "FAILED" ]]; then
+allowed="$(python3 - "$json_report" <<'PY'
+import json
+import sys
+print("true" if json.loads(sys.argv[1]).get("allowed") else "false")
+PY
+)"
+if [[ "$allowed" != "true" ]]; then
   exit 1
 fi
-
-exit 0

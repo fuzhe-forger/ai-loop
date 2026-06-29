@@ -12,6 +12,7 @@ from typing import Any
 from .agent import AgentError, AgentRequest, run_agent
 from .artifacts import now_iso, update_run, write_json, write_text
 from .config import ConfigError, config_text, load_config
+from .ids import validate_id
 from .memory import record_run_memory
 from .prompt import planning_prompt
 
@@ -48,7 +49,10 @@ def plan(request: PlanRequest) -> Path:
 
     config_snapshot = config_text(repo)
     artifacts_root = repo / config.get("artifacts", {}).get("root", "runs")
-    run_id = request.run_id or make_plan_run_id(task)
+    try:
+        run_id = validate_id(request.run_id or make_plan_run_id(task), field="run_id")
+    except ValueError as exc:
+        raise PlanError(str(exc)) from exc
     run_dir = artifacts_root / run_id
     if run_dir.exists():
         raise PlanError(f"run already exists: {run_dir}")

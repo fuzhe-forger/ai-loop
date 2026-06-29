@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "name": "sinan-fitness-checks",
+  "description": "Repeatable health checks for Sinan system fitness: capability, evidence, memory, organization policy, and timing guard.",
+  "score_policy": {
+    "pass_score": 85,
+    "warn_score": 70,
+    "required_categories": ["capability", "evidence", "memory", "organization", "timing"]
+  },
+  "checks": [
+    {
+      "id": "FIT-001",
+      "category": "capability",
+      "title": "Capability registry passes",
+      "type": "json_result",
+      "path": "runs/<run-id>/sinan-capability-check.json",
+      "json_path": ["result"],
+      "expected": "PASSED",
+      "weight": 20
+    },
+    {
+      "id": "FIT-002",
+      "category": "evidence",
+      "title": "Evidence summary has timer guard artifacts",
+      "type": "artifact_present",
+      "path": "runs/<run-id>/evidence-summary.json",
+      "artifact_keys": ["execution_time_contract_timer_guard_json", "timer_guard_marker"],
+      "weight": 15
+    },
+    {
+      "id": "FIT-003",
+      "category": "memory",
+      "title": "Project memory quality passes",
+      "type": "json_result",
+      "path": "runs/<run-id>/memory-quality-report.json",
+      "json_path": ["result"],
+      "expected": "PASSED",
+      "weight": 15
+    },
+    {
+      "id": "FIT-004",
+      "category": "organization",
+      "title": "Organization policy passes",
+      "type": "json_result",
+      "path": "runs/<run-id>/organization-policy-report.json",
+      "json_path": ["result"],
+      "expected": "PASSED",
+      "weight": 15
+    },
+    {
+      "id": "FIT-005",
+      "category": "timing",
+      "title": "Timer guard marker is closed",
+      "type": "json_result",
+      "path": "runs/<run-id>/timers/timer-guard.start.json",
+      "json_path": ["state"],
+      "expected": "closed",
+      "weight": 15
+    },
+    {
+      "id": "FIT-006",
+      "category": "timing",
+      "title": "Current fitness timer is open or closed",
+      "type": "json_in",
+      "path": "runs/<run-id>/timers/sinan-fitness.start.json",
+      "json_path": ["state"],
+      "expected_any": ["started", "closed"],
+      "weight": 10
+    },
+    {
+      "id": "FIT-007",
+      "category": "verification",
+      "title": "Verification report exists",
+      "type": "file_present",
+      "path": "runs/<run-id>/verification-report.md",
+      "weight": 10
+    }
+  ]
+}

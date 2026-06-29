@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "default_actor": "scheduler",
+  "actors": {
+    "execution_agent": {"assigned_actor": "顾实", "role": "工程执行", "lane": "execution"},
+    "reviewer": {"assigned_actor": "裴衡", "role": "复核审查", "lane": "review"},
+    "human": {"assigned_actor": "人类", "role": "目标/边界/授权/最终决策", "lane": "approval"},
+    "scheduler": {"assigned_actor": "黑墙", "role": "调度/总控", "lane": "routing"},
+    "tester": {"assigned_actor": "测真", "role": "验证测试", "lane": "verification"},
+    "scribe": {"assigned_actor": "简辞", "role": "表达沉淀", "lane": "documentation"}
+  },
+  "contract": {
+    "required_fields": ["schema_version", "result", "next_actor", "assigned_actor", "role", "lane", "reason", "remote_write"],
+    "remote_write_policy": "local-only routing; no remote writes"
+  }
+}

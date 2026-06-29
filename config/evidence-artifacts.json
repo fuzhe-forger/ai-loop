@@ -1,0 +1,277 @@
+{
+  "schema_version": 1,
+  "default_task_type": "unknown",
+  "artifacts": [
+    {
+      "key": "summary",
+      "path": "summary.md",
+      "group": "core",
+      "required_for": [
+        "all"
+      ]
+    },
+    {
+      "key": "stage_report",
+      "path": "stage-report.md",
+      "group": "core",
+      "required_for": [
+        "all"
+      ]
+    },
+    {
+      "key": "comment_draft",
+      "path": "multica-comment.md",
+      "group": "core",
+      "required_for": [
+        "all"
+      ]
+    },
+    {
+      "key": "execution_preflight",
+      "path": "execution-preflight.md",
+      "group": "preflight",
+      "required_for": [
+        "local_script_patch",
+        "documentation",
+        "writeback"
+      ]
+    },
+    {
+      "key": "execution_preflight_json",
+      "path": "execution-preflight.json",
+      "group": "preflight",
+      "required_for": [
+        "local_script_patch",
+        "documentation",
+        "writeback"
+      ]
+    },
+    {
+      "key": "intent_ambiguity_preflight",
+      "path": "intent-ambiguity-preflight.md",
+      "group": "preflight",
+      "required_for": [],
+      "optional_for": [
+        "local_script_patch",
+        "documentation"
+      ]
+    },
+    {
+      "key": "intent_ambiguity_preflight_json",
+      "path": "intent-ambiguity-preflight.json",
+      "group": "preflight",
+      "required_for": [],
+      "optional_for": [
+        "local_script_patch",
+        "documentation"
+      ]
+    },
+    {
+      "key": "requirement_gate",
+      "path": "requirement-gate.md",
+      "group": "gate",
+      "required_for": [
+        "local_script_patch",
+        "documentation",
+        "writeback"
+      ]
+    },
+    {
+      "key": "design_gate",
+      "path": "design-gate.md",
+      "group": "gate",
+      "required_for": [],
+      "optional_for": [
+        "local_script_patch"
+      ]
+    },
+    {
+      "key": "deliverable_gate",
+      "path": "deliverable-gate.md",
+      "group": "gate",
+      "required_for": [
+        "local_script_patch",
+        "documentation",
+        "writeback"
+      ]
+    },
+    {
+      "key": "gate_policy_check",
+      "path": "gate-policy-check.md",
+      "group": "gate",
+      "required_for": [
+        "local_script_patch",
+        "writeback"
+      ]
+    },
+    {
+      "key": "gate_policy_check_json",
+      "path": "gate-policy-check.json",
+      "group": "gate",
+      "required_for": [
+        "local_script_patch",
+        "writeback"
+      ]
+    },
+    {
+      "key": "closeout_summary",
+      "path": "closeout/closeout-summary.md",
+      "group": "closeout",
+      "required_for": [
+        "local_script_patch",
+        "documentation",
+        "writeback"
+      ]
+    },
+    {
+      "key": "continuation_gate_json",
+      "path": "continuation-gate.json",
+      "group": "timing",
+      "required_for": [
+        "local_script_patch",
+        "documentation"
+      ]
+    },
+    {
+      "key": "execution_time_contract_json",
+      "path": "execution-time-contract.json",
+      "group": "timing",
+      "required_for": [
+        "local_script_patch",
+        "documentation"
+      ]
+    },
+    {
+      "key": "time_estimation_calibration_json",
+      "path": "time-estimation-calibration.json",
+      "group": "timing",
+      "required_for": [
+        "local_script_patch",
+        "documentation"
+      ]
+    },
+    {
+      "key": "evidence_summary_json",
+      "path": "evidence-summary.json",
+      "group": "evidence",
+      "required_for": [
+        "local_script_patch",
+        "documentation",
+        "writeback"
+      ]
+    },
+    {
+      "key": "evidence_summary_md",
+      "path": "evidence-summary.md",
+      "group": "evidence",
+      "required_for": [
+        "local_script_patch",
+        "documentation",
+        "writeback"
+      ]
+    },
+    {
+      "key": "evidence_checklist",
+      "path": "evidence-checklist.md",
+      "group": "evidence",
+      "required_for": [
+        "local_script_patch",
+        "documentation",
+        "writeback"
+      ]
+    },
+    {
+      "key": "evidence_index",
+      "path": "evidence-index.md",
+      "group": "evidence",
+      "required_for": [
+        "local_script_patch",
+        "documentation",
+        "writeback"
+      ]
+    },
+    {
+      "key": "review_packet",
+      "path": "review-packet.md",
+      "group": "review",
+      "required_for": [
+        "local_script_patch",
+        "writeback"
+      ]
+    },
+    {
+      "key": "approval_boundary_comment",
+      "path": "approval-boundary-comment.md",
+      "group": "writeback",
+      "required_for": [
+        "writeback"
+      ]
+    },
+    {
+      "key": "approval_boundary_status",
+      "path": "approval-boundary-status.md",
+      "group": "writeback",
+      "required_for": [
+        "writeback"
+      ]
+    },
+    {
+      "key": "approval_boundary_metadata",
+      "path": "approval-boundary-metadata.md",
+      "group": "writeback",
+      "required_for": [
+        "writeback"
+      ]
+    },
+    {
+      "key": "writeback_summary_json",
+      "path": "writeback-summary.json",
+      "group": "writeback",
+      "required_for": [
+        "writeback"
+      ]
+    }
+  ],
+  "task_types": {
+    "local_script_patch": {
+      "include_groups": [
+        "core",
+        "preflight",
+        "gate",
+        "closeout",
+        "timing",
+        "evidence",
+        "review"
+      ]
+    },
+    "documentation": {
+      "include_groups": [
+        "core",
+        "preflight",
+        "gate",
+        "closeout",
+        "timing",
+        "evidence"
+      ]
+    },
+    "writeback": {
+      "include_groups": [
+        "core",
+        "preflight",
+        "gate",
+        "closeout",
+        "evidence",
+        "review",
+        "writeback"
+      ]
+    },
+    "unknown": {
+      "include_groups": [
+        "core",
+        "preflight",
+        "gate",
+        "evidence"
+      ]
+    }
+  }
+}

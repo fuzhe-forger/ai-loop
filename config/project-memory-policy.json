@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "name": "project-memory-policy",
+  "memory_dir": "memory",
+  "index_file": "memory/index.json",
+  "required_top_level_arrays": [
+    "constraints",
+    "decisions",
+    "pitfalls",
+    "cases"
+  ],
+  "required_fields_by_type": {
+    "constraints": [
+      "id",
+      "title",
+      "file",
+      "tags"
+    ],
+    "decisions": [
+      "id",
+      "title",
+      "status",
+      "file",
+      "tags"
+    ],
+    "pitfalls": [
+      "id",
+      "title",
+      "file",
+      "severity",
+      "tags"
+    ],
+    "cases": [
+      "id",
+      "title",
+      "file",
+      "tags",
+      "review_state"
+    ]
+  },
+  "allowed_decision_status": [
+    "proposed",
+    "accepted",
+    "deprecated",
+    "draft",
+    "reviewed"
+  ],
+  "allowed_pitfall_severity": [
+    "low",
+    "medium",
+    "high",
+    "critical"
+  ],
+  "sensitive_patterns": [
+    "AKIA[0-9A-Z]{16}",
+    "(?i)api[_-]?key\\s*[:=]\\s*[^\\s]+",
+    "(?i)password\\s*[:=]\\s*[^\\s]+",
+    "(?i)secret\\s*[:=]\\s*[^\\s]+",
+    "(?i)token\\s*[:=]\\s*[^\\s]+"
+  ],
+  "side_effect_policy": "local memory files only; no external writes",
+  "allowed_review_state": [
+    "draft",
+    "reviewed",
+    "accepted",
+    "deprecated"
+  ],
+  "review_state_transitions": {
+    "": ["draft"],
+    "draft": ["reviewed", "deprecated"],
+    "reviewed": ["accepted", "deprecated"],
+    "accepted": ["deprecated"],
+    "deprecated": []
+  }
+}

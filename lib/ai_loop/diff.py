@@ -14,21 +14,26 @@ class DiffResult:
     iteration: int
     patch_path: str
     changed_files: list[str]
+    untracked_files: list[str]
     diff_lines: int
 
 
 def collect_diff(workspace: Path, run_dir: Path, iteration: int) -> DiffResult:
     diff = run_command(["git", "diff", "--binary"], cwd=workspace, check=False)
     names = run_command(["git", "diff", "--name-only"], cwd=workspace, check=False)
+    untracked = run_command(["git", "ls-files", "--others", "--exclude-standard"], cwd=workspace, check=False)
     patch_path = run_dir / f"diff.{iteration}.patch"
     write_text(patch_path, diff.stdout)
 
-    changed_files = [line for line in names.stdout.splitlines() if line.strip()]
+    tracked_files = [line for line in names.stdout.splitlines() if line.strip()]
+    untracked_files = [line for line in untracked.stdout.splitlines() if line.strip()]
+    changed_files = sorted(dict.fromkeys([*tracked_files, *untracked_files]))
     diff_lines = count_diff_lines(diff.stdout)
     result = DiffResult(
         iteration=iteration,
         patch_path=patch_path.name,
         changed_files=changed_files,
+        untracked_files=untracked_files,
         diff_lines=diff_lines,
     )
     write_json(
@@ -38,6 +43,7 @@ def collect_diff(workspace: Path, run_dir: Path, iteration: int) -> DiffResult:
             "iteration": iteration,
             "patch_path": result.patch_path,
             "changed_files": result.changed_files,
+            "untracked_files": result.untracked_files,
             "diff_lines": result.diff_lines,
         },
     )

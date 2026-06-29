@@ -72,6 +72,51 @@ PY
   exit 0
 fi
 
+if [[ -n "$query_tag" && -z "$query_type" ]]; then
+  echo "# Query by tag: $query_tag"
+  echo ""
+  python3 - <<'PY' "$INDEX_FILE" "$query_tag"
+import json
+import sys
+
+with open(sys.argv[1], encoding='utf-8') as fh:
+    data = json.load(fh)
+query_tag = sys.argv[2]
+sections = [
+    ('constraints', 'constraint'),
+    ('decisions', 'decision'),
+    ('pitfalls', 'pitfall'),
+    ('preferences', 'preference'),
+    ('cases', 'case'),
+    ('templates', 'template'),
+]
+found = False
+for array_name, memory_type in sections:
+    for entry in data.get(array_name, []):
+        tags = entry.get('tags') or []
+        if query_tag not in tags:
+            continue
+        found = True
+        ref = entry.get('id') or entry.get('category') or entry.get('file') or '<unknown>'
+        title = entry.get('title') or entry.get('category') or ref
+        print(f"Type: {memory_type}")
+        print(f"ID: {ref}")
+        print(f"Title: {title}")
+        if entry.get('issue'):
+            print(f"Issue: {entry['issue']}")
+        if entry.get('review_state'):
+            print(f"Review state: {entry['review_state']}")
+        if entry.get('status'):
+            print(f"Status: {entry['status']}")
+        print(f"File: {entry.get('file') or ''}")
+        print(f"Tags: {', '.join(tags)}")
+        print("")
+if not found:
+    print("No results found")
+PY
+  exit 0
+fi
+
 if [[ -n "$search_keyword" ]]; then
   echo "# Full-text search: $search_keyword"
   echo ""

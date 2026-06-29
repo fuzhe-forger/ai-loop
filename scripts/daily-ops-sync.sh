@@ -3,6 +3,9 @@
 # 由 crontab 调用；负责把 Multica/Loop/CodeGraph 快照写入 Obsidian。
 set -euo pipefail
 
+export HOME="${HOME:-/home/user}"
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/user/.local/bin:${PATH:-}"
+
 REPO_ROOT="${REPO_ROOT:-/home/user/JAVA/ai/ai-loop}"
 WIN_REPO_ROOT="${WIN_REPO_ROOT:-/mnt/d/JAVA/ai/ai-loop}"
 VAULT_PATH="${VAULT_PATH:-/mnt/d/JAVA/knowledge/tiandao}"

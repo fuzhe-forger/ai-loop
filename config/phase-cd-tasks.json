@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "scope": "Phase C and Phase D local buildout",
+  "generated_from": "docs/ai-work-orchestration/09-north-star.md#phase-c-multica-loop-组织层 and #phase-d-项目记忆",
+  "estimation_model": {
+    "rule": "task_quantity_first_calibration_second",
+    "raw_estimate_source": "explicit task workload",
+    "calibration_formula": "if bucket has >=3 trusted samples, calibrated=round(raw*0.8 + bucket_recommended*0.2); otherwise use raw estimate",
+    "confidence_rule": "high when bucket has >=10 samples, medium when 3-9, low when <3"
+  },
+  "tasks": [
+    {
+      "id": "CD-001",
+      "metric": "Phase C 组织层",
+      "phase": "Phase C",
+      "title": "定义 Multica Loop 组织层模块边界",
+      "task_type": "documentation",
+      "raw_estimate_minutes": 5,
+      "priority": "P0",
+      "acceptance": "文档列出 routing、policy、side-effect gate、review orchestration 的边界、输入输出、现有脚本和缺口。",
+      "verification": "phase-cd plan contains all four organization modules and maps each to scripts/configs",
+      "output_paths": ["docs/ai-work-orchestration/26-phase-cd-organization-memory-plan.md"],
+      "side_effects": "local docs only"
+    },
+    {
+      "id": "CD-002",
+      "metric": "Phase C 组织层",
+      "phase": "Phase C",
+      "title": "把 Phase C/D 能力登记进司南能力注册表",
+      "task_type": "local_script_patch",
+      "raw_estimate_minutes": 4,
+      "priority": "P1",
+      "acceptance": "sinan-capabilities 记录 phase_c_organization_layer 与 phase_d_project_memory 两个能力。",
+      "verification": "sinan-capability-check passes and both capability ids exist",
+      "output_paths": ["config/sinan-capabilities.json"],
+      "side_effects": "local config only"
+    },
+    {
+      "id": "CD-003",
+      "metric": "Phase C 组织层",
+      "phase": "Phase C",
+      "title": "形成组织层执行路径清单",
+      "task_type": "documentation",
+      "raw_estimate_minutes": 4,
+      "priority": "P1",
+      "acceptance": "明确从 issue intake 到 writeback gate 的本地路径，并标注当前脚本入口。",
+      "verification": "phase-cd plan includes intake-to-writeback path and validation commands",
+      "output_paths": ["docs/ai-work-orchestration/26-phase-cd-organization-memory-plan.md"],
+      "side_effects": "local docs only"
+    },
+    {
+      "id": "CD-004",
+      "metric": "Phase C 组织层",
+      "phase": "Phase C",
+      "title": "定义组织层缺口和下一轮切片",
+      "task_type": "documentation",
+      "raw_estimate_minutes": 3,
+      "priority": "P2",
+      "acceptance": "文档给出 Phase C 未完成项：模块化封装、状态机统一、review orchestration 自动化边界。",
+      "verification": "phase-cd plan has next slices section with Phase C gaps",
+      "output_paths": ["docs/ai-work-orchestration/26-phase-cd-organization-memory-plan.md"],
+      "side_effects": "local docs only"
+    },
+    {
+      "id": "CD-005",
+      "metric": "Phase D 项目记忆",
+      "phase": "Phase D",
+      "title": "定义项目记忆质量规则",
+      "task_type": "documentation",
+      "raw_estimate_minutes": 5,
+      "priority": "P0",
+      "acceptance": "定义 index、文件存在性、分类、标签、复核状态、敏感信息约束和可查询性规则。",
+      "verification": "project-memory-policy JSON validates and memory-quality-check reads it",
+      "output_paths": ["config/project-memory-policy.json"],
+      "side_effects": "local config only"
+    },
+    {
+      "id": "CD-006",
+      "metric": "Phase D 项目记忆",
+      "phase": "Phase D",
+      "title": "实现项目记忆质量检查脚本",
+      "task_type": "local_script_patch",
+      "raw_estimate_minutes": 8,
+      "priority": "P0",
+      "acceptance": "脚本检查 memory/index.json、引用文件、必填字段、标签和敏感信息模式，输出 md/json。",
+      "verification": "scripts/memory-quality-check.sh --output /tmp/memory-quality.md --json-output /tmp/memory-quality.json passes",
+      "output_paths": ["scripts/memory-quality-check.sh"],
+      "side_effects": "local script only"
+    },
+    {
+      "id": "CD-007",
+      "metric": "Phase D 项目记忆",
+      "phase": "Phase D",
+      "title": "生成当前项目记忆质量报告",
+      "task_type": "local_script_patch",
+      "raw_estimate_minutes": 4,
+      "priority": "P1",
+      "acceptance": "run 目录留下 memory-quality-report.md/json，并列出缺口。",
+      "verification": "run evidence contains memory-quality-report artifacts",
+      "output_paths": ["runs/<run-id>/memory-quality-report.md", "runs/<run-id>/memory-quality-report.json"],
+      "side_effects": "local run artifacts only"
+    },
+    {
+      "id": "CD-008",
+      "metric": "Phase D 项目记忆",
+      "phase": "Phase D",
+      "title": "沉淀本轮北极星任务板经验案例",
+      "task_type": "documentation",
+      "raw_estimate_minutes": 6,
+      "priority": "P1",
+      "acceptance": "memory/cases 中新增北极星任务板经验，并更新 index.json。",
+      "verification": "memory-query can find the new case by FUZ-554 or north-star",
+      "output_paths": ["memory/cases/FUZ-554-north-star-task-board.md", "memory/index.json"],
+      "side_effects": "local memory files only"
+    },
+    {
+      "id": "CD-009",
+      "metric": "Phase C/D 验收",
+      "phase": "Phase C/D",
+      "title": "生成 Phase C/D 双线执行报告",
+      "task_type": "documentation",
+      "raw_estimate_minutes": 5,
+      "priority": "P0",
+      "acceptance": "报告列出 C/D 全部任务、完成状态、耗时校准、验证和下一步切片。",
+      "verification": "phase-cd-execution-report.md exists and all completed tasks are reflected",
+      "output_paths": ["runs/<run-id>/phase-cd-execution-report.md"],
+      "side_effects": "local run artifact only"
+    }
+  ]
+}

@@ -2,15 +2,19 @@
 
 from __future__ import annotations
 
+import fcntl
 import hashlib
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from typing import Iterator, TextIO
 
 from .agent import AgentError, AgentRequest, run_agent
 from .artifacts import now_iso, update_run, write_json, write_text
 from .config import ConfigError, config_text, load_config
 from .diff import collect_diff
+from .ids import validate_id
 from .memory import record_run_memory
 from .prompt import first_prompt, retry_prompt
 from .safety import SafetyError, SafetyRequest, run_safety
@@ -53,6 +57,20 @@ def repo_hash(repo: Path) -> str:
     return hashlib.sha256(str(repo.resolve()).encode("utf-8")).hexdigest()[:12]
 
 
+@contextmanager
+def run_lock(lock_path: Path) -> Iterator[TextIO]:
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("w", encoding="utf-8") as lock_file:
+        try:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as exc:
+            raise RunError(f"run lock is held: {lock_path}") from exc
+        try:
+            yield lock_file
+        finally:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+
+
 def run(request: RunRequest) -> Path:
     repo = request.repo.resolve()
     if not repo.exists():
@@ -73,16 +91,36 @@ def run(request: RunRequest) -> Path:
 
     config_snapshot = config_text(repo)
     artifacts_root = repo / config.get("artifacts", {}).get("root", "runs")
-    run_id = request.run_id or make_run_id(task)
-    run_dir = artifacts_root / run_id
-    if run_dir.exists():
-        raise RunError(f"run already exists: {run_dir}")
-    run_dir.mkdir(parents=True)
-
+    try:
+        run_id = validate_id(request.run_id or make_run_id(task), field="run_id")
+    except ValueError as exc:
+        raise RunError(str(exc)) from exc
     workspace_root = Path(config.get("workspace", {}).get("root", "/tmp/ai-loop/workspaces"))
     workspace_path = workspace_root / run_id
     base_ref = request.base_ref or config.get("repo", {}).get("default_ref") or "HEAD"
     lock_path = artifacts_root / ".locks" / f"{repo_hash(repo)}-{base_ref.replace('/', '_')}.lock"
+
+    with run_lock(lock_path):
+        return run_locked(request, repo, task, config, config_snapshot, artifacts_root, run_id, workspace_root, workspace_path, base_ref, lock_path)
+
+
+def run_locked(
+    request: RunRequest,
+    repo: Path,
+    task: Path,
+    config: dict,
+    config_snapshot: str,
+    artifacts_root: Path,
+    run_id: str,
+    workspace_root: Path,
+    workspace_path: Path,
+    base_ref: str,
+    lock_path: Path,
+) -> Path:
+    run_dir = artifacts_root / run_id
+    if run_dir.exists():
+        raise RunError(f"run already exists: {run_dir}")
+    run_dir.mkdir(parents=True)
 
     task_content = task.read_text(encoding="utf-8")
     write_text(run_dir / "task.md", task_content)

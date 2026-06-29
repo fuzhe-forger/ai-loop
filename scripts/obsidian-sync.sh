@@ -3,11 +3,17 @@
 # 只写 99-generated/ 目录，不覆盖人工文档。
 set -euo pipefail
 
+export HOME="${HOME:-/home/user}"
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/user/.local/bin:${PATH:-}"
+
 VAULT_PATH="${VAULT_PATH:-/mnt/d/JAVA/knowledge/tiandao}"
 REPO_ROOT="${REPO_ROOT:-/home/user/JAVA/ai/ai-loop}"
 JAVA_ROOT="${JAVA_ROOT:-/mnt/d/JAVA}"
 DRY_RUN="${DRY_RUN:-true}"
 ARCHIVED_ISSUE_RETENTION_DAYS="${ARCHIVED_ISSUE_RETENTION_DAYS:-7}"
+WRITE_OPERATION_LOG="${WRITE_OPERATION_LOG:-true}"
+OPERATION_LOG_DIR="${OPERATION_LOG_DIR:-$REPO_ROOT/state/operations}"
+SYNC_STARTED_AT="$(date '+%F %T %z')"
 
 echo "Obsidian 聚合同步 v3"
 echo "  Vault: $VAULT_PATH"
@@ -15,6 +21,7 @@ echo "  Repo: $REPO_ROOT"
 echo "  Java root: $JAVA_ROOT"
 echo "  DRY_RUN: $DRY_RUN"
 echo "  Archived issue retention days: $ARCHIVED_ISSUE_RETENTION_DAYS"
+echo "  Operation log: $WRITE_OPERATION_LOG"
 
 if [[ ! -d "$VAULT_PATH" ]]; then
   echo "ERROR: Vault 不存在: $VAULT_PATH"
@@ -26,6 +33,11 @@ if [[ ! -d "$REPO_ROOT" ]]; then
   exit 1
 fi
 
+if ! command -v multica >/dev/null 2>&1; then
+  echo "ERROR: multica CLI 不在 PATH 中，停止同步以避免写入空快照。"
+  exit 1
+fi
+
 GENERATED="$VAULT_PATH/99-generated"
 TMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TMP_DIR"' EXIT
@@ -34,6 +46,7 @@ mkdir -p \
   "$GENERATED/multica" \
   "$GENERATED/multica/issues" \
   "$GENERATED/loop/docs" \
+  "$GENERATED/loop/docs/config" \
   "$GENERATED/loop/runs" \
   "$GENERATED/agents" \
   "$GENERATED/autopilots" \
@@ -507,25 +520,131 @@ import sys
 from pathlib import Path
 
 runs_dir = Path(sys.argv[1])
+
+
+def gate_summary(path):
+    if not path.exists() or path.stat().st_size == 0:
+        return "MISSING"
+    text = path.read_text(encoding="utf-8", errors="replace")
+    result = "UNKNOWN"
+    score = "UNKNOWN"
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("- Result:"):
+            result = stripped.split(":", 1)[1].strip()
+        elif stripped.startswith("- Score:"):
+            score = stripped.split(":", 1)[1].strip()
+    return f"{result} {score}" if score != "UNKNOWN" else result
+
+
+
+def policy_summary(path):
+    if not path.exists() or path.stat().st_size == 0:
+        return "MISSING"
+    text = path.read_text(encoding="utf-8", errors="replace")
+    result = "UNKNOWN"
+    task_type = "UNKNOWN"
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("- Result:"):
+            result = stripped.split(":", 1)[1].strip()
+        elif stripped.startswith("- Task type:"):
+            task_type = stripped.split(":", 1)[1].strip()
+    return f"{result} {task_type}" if task_type != "UNKNOWN" else result
+
+
+def exception_summary(path):
+    if not path.exists() or path.stat().st_size == 0:
+        return "MISSING"
+    text = path.read_text(encoding="utf-8", errors="replace")
+    status = "UNKNOWN"
+    approved_by = "UNKNOWN"
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("- Status:"):
+            status = stripped.split(":", 1)[1].strip()
+        elif stripped.startswith("- Approved by:"):
+            approved_by = stripped.split(":", 1)[1].strip()
+    return f"{status} {approved_by}" if approved_by != "UNKNOWN" else status
+
+
+def latest_time_contract(run_dir):
+    paths = []
+    primary = run_dir / "execution-time-contract.json"
+    if primary.is_file():
+        paths.append(primary)
+    for path in sorted(run_dir.glob("execution-time-contract-*.json")):
+        if path not in paths:
+            paths.append(path)
+    latest = None
+    for path in paths:
+        try:
+            latest = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+    if latest is None:
+        return {"within_one_minute": "n/a", "elapsed_minutes": "n/a", "absolute_error_minutes": "n/a", "next_estimate": "n/a"}
+    return {
+        "within_one_minute": latest.get("within_one_minute") if latest.get("within_one_minute") is not None else "n/a",
+        "elapsed_minutes": latest.get("elapsed_minutes") if latest.get("elapsed_minutes") is not None else "n/a",
+        "absolute_error_minutes": latest.get("absolute_error_minutes") if latest.get("absolute_error_minutes") is not None else "n/a",
+        "next_estimate": latest.get("recommended_next_estimate_minutes") or latest.get("next_estimate_minutes") or "n/a",
+    }
+
 runs = []
 for run_dir in runs_dir.iterdir():
     if not run_dir.is_dir():
         continue
     summary = run_dir / "summary.md"
+    clarification = run_dir / "clarification.md"
+    clarification_gate = run_dir / "clarification-gate.md"
+    requirement_gate = run_dir / "requirement-gate.md"
+    design_gate = run_dir / "design-gate.md"
+    deliverable_gate = run_dir / "deliverable-gate.md"
+    gate_policy = run_dir / "gate-policy-check.md"
+    gate_exception = run_dir / "gate-policy-exception.md"
     run_json = run_dir / "run.json"
+    state_json = run_dir / "state-evaluation.json"
+    if not any(path.exists() for path in (run_json, state_json, summary)):
+        continue
+    metadata = {}
+    state = {}
     if run_json.exists():
         try:
             metadata = json.loads(run_json.read_text(encoding="utf-8"))
-            runs.append(
-                {
-                    "id": run_dir.name,
-                    "status": metadata.get("status"),
-                    "updated": metadata.get("updated_at"),
-                    "has_summary": summary.exists(),
-                }
-            )
         except Exception:
-            pass
+            metadata = {}
+    if state_json.exists():
+        try:
+            state = json.loads(state_json.read_text(encoding="utf-8"))
+        except Exception:
+            state = {}
+    updated = metadata.get("updated_at")
+    if not updated:
+        updated = __import__("datetime").datetime.fromtimestamp(run_dir.stat().st_mtime, tz=__import__("datetime").timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    time_contract = latest_time_contract(run_dir)
+    runs.append(
+        {
+            "id": run_dir.name,
+            "status": state.get("to") or metadata.get("status") or "unknown",
+            "updated": updated,
+            "has_summary": summary.exists(),
+            "has_clarification": clarification.exists(),
+            "has_clarification_gate": clarification_gate.exists(),
+            "gate_scores": " / ".join([
+                f"R:{gate_summary(requirement_gate)}",
+                f"D:{gate_summary(design_gate)}",
+                f"C:{gate_summary(clarification_gate)}",
+                f"O:{gate_summary(deliverable_gate)}",
+            ]),
+            "gate_policy": policy_summary(gate_policy),
+            "gate_exception": exception_summary(gate_exception),
+            "within_one_minute": time_contract["within_one_minute"],
+            "elapsed_minutes": time_contract["elapsed_minutes"],
+            "absolute_error_minutes": time_contract["absolute_error_minutes"],
+            "next_estimate": time_contract["next_estimate"],
+        }
+    )
 lines = []
 lines.append("---\n")
 lines.append("type: loop_snapshot\n")
@@ -535,11 +654,14 @@ lines.append("---\n\n")
 lines.append("# Loop Run 证据索引\n\n")
 lines.append("由 `obsidian-sync.sh` 自动生成，可覆盖。\n\n")
 lines.append(f"Run 总数：{len(runs)}\n\n")
-lines.append("| Run ID | 状态 | Summary | 更新时间 |\n")
-lines.append("|---|---|---|---|\n")
+lines.append("| Run ID | 状态 | Summary | Clarification | Clarification Gate | Gate Scores | Gate Policy | Gate Exception | within_one_minute | Elapsed | Absolute Error | Next Estimate | 更新时间 |\n")
+lines.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|\n")
 for run in sorted(runs, key=lambda item: item.get("updated") or "", reverse=True)[:100]:
     run_id = str(run["id"]).replace("|", "\\|")
-    lines.append(f"| {run_id} | {run.get('status')} | {'✓' if run.get('has_summary') else '✗'} | {run.get('updated')} |\n")
+    gate_scores = str(run.get("gate_scores") or "").replace("|", "\\|")
+    gate_policy = str(run.get("gate_policy") or "").replace("|", "\\|")
+    gate_exception = str(run.get("gate_exception") or "").replace("|", "\\|")
+    lines.append(f"| {run_id} | {run.get('status')} | {'✓' if run.get('has_summary') else '✗'} | {'✓' if run.get('has_clarification') else '✗'} | {'✓' if run.get('has_clarification_gate') else '✗'} | {gate_scores} | {gate_policy} | {gate_exception} | {run.get('within_one_minute')} | {run.get('elapsed_minutes')} | {run.get('absolute_error_minutes')} | {run.get('next_estimate')} | {run.get('updated')} |\n")
 Path(sys.argv[2]).write_text("".join(lines), encoding="utf-8")
 print(f"生成: {sys.argv[2]}")
 PY
@@ -555,19 +677,69 @@ fi
 echo ""
 echo "## 4. 生成 ai-loop 文档镜像"
 if [[ -d "$REPO_ROOT/docs/ai-work-orchestration" ]]; then
-  python3 - <<'PY' "$REPO_ROOT/docs/ai-work-orchestration" "$TMP_DIR/ai-loop-docs" "$TMP_DIR/ai-loop-docs-index.md"
+  python3 - <<'PY' "$REPO_ROOT/docs/ai-work-orchestration" "$REPO_ROOT/config" "$TMP_DIR/ai-loop-docs" "$TMP_DIR/ai-loop-docs-index.md"
 import sys
 from pathlib import Path
 
 docs_dir = Path(sys.argv[1])
-out_dir = Path(sys.argv[2])
+config_dir = Path(sys.argv[2])
+out_dir = Path(sys.argv[3])
 out_dir.mkdir(parents=True, exist_ok=True)
 copied = []
 for source in sorted(docs_dir.glob("*.md")):
-    if source.name not in ("README.md", "logbook.md"):
+    if source.name != "logbook.md":
         destination = out_dir / source.name
         destination.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
         copied.append(source.name)
+copied_reports = []
+reports_out_dir = out_dir / "reports"
+if (docs_dir / "reports").exists():
+    reports_out_dir.mkdir(parents=True, exist_ok=True)
+    for report in sorted((docs_dir / "reports").glob("*.md"), reverse=True)[:30]:
+        (reports_out_dir / report.name).write_text(report.read_text(encoding="utf-8"), encoding="utf-8")
+        copied_reports.append(report.name)
+copied_share_docs = []
+share_out_dir = out_dir / "share"
+if (docs_dir / "share").exists():
+    share_out_dir.mkdir(parents=True, exist_ok=True)
+    for share_doc in sorted((docs_dir / "share").glob("*.md")):
+        (share_out_dir / share_doc.name).write_text(share_doc.read_text(encoding="utf-8"), encoding="utf-8")
+        copied_share_docs.append(share_doc.name)
+copied_configs = []
+config_out_dir = out_dir / "config"
+if config_dir.exists():
+    config_out_dir.mkdir(parents=True, exist_ok=True)
+    for config_doc in sorted(config_dir.glob("*.json")):
+        (config_out_dir / config_doc.name).write_text(config_doc.read_text(encoding="utf-8"), encoding="utf-8")
+        copied_configs.append(config_doc.name)
+capability_registry = config_dir / "sinan-capabilities.json"
+if capability_registry.exists():
+    import json
+    def md_cell(value):
+        text = str(value or "")
+        return text.replace("|", "-").replace("<", "&lt;").replace(">", "&gt;")
+    def md_list(values):
+        return "<br>".join(md_cell(value) for value in (values or []))
+    data = json.loads(capability_registry.read_text(encoding="utf-8"))
+    cap_lines = []
+    cap_lines.append("---\n")
+    cap_lines.append("type: sinan_capability_registry\n")
+    cap_lines.append("source: config/sinan-capabilities.json\n")
+    cap_lines.append("generated: auto\n")
+    cap_lines.append("---\n\n")
+    cap_lines.append("# 司南能力目录\n\n")
+    cap_lines.append("由 `obsidian-sync.sh` 从 `config/sinan-capabilities.json` 自动生成，可覆盖。\n\n")
+    cap_lines.append(f"能力数量：{len(data.get('capabilities') or [])}\n\n")
+    cap_lines.append("| 能力 | 状态 | 阶段 | 入口 | 外部工具 | 证据 | 验证 | 策略 |\n")
+    cap_lines.append("|---|---|---|---|---|---|---|---|\n")
+    for capability in data.get("capabilities") or []:
+        entrypoints = md_list(capability.get("entrypoints") or [])
+        external_tools = md_list(capability.get("external_tools") or [])
+        evidence = md_list(capability.get("evidence_outputs") or [])
+        verification = md_list(capability.get("verification") or [])
+        policy = md_cell(capability.get("side_effect_policy") or "")
+        cap_lines.append(f"| {md_cell(capability.get('name'))} (`{md_cell(capability.get('id'))}`) | {md_cell(capability.get('status'))} | {md_cell(capability.get('phase') or '')} | {entrypoints} | {external_tools} | {evidence} | {verification} | {policy} |\n")
+    (out_dir / "sinan-capabilities.md").write_text("".join(cap_lines), encoding="utf-8")
 lines = []
 lines.append("---\n")
 lines.append("type: ai_loop_docs\n")
@@ -586,12 +758,22 @@ if (docs_dir / "cases").exists():
         if case_dir.is_dir():
             lines.append(f"- 案例：{case_dir.name}\n")
 lines.append("\n## 阶段报告\n\n")
-if (docs_dir / "reports").exists():
-    for report in sorted((docs_dir / "reports").glob("*.md"), reverse=True)[:30]:
-        lines.append(f"- [[../../docs/ai-work-orchestration/reports/{report.name}|{report.stem}]]\n")
-Path(sys.argv[3]).write_text("".join(lines), encoding="utf-8")
-print(f"镜像沉淀: {len(copied)} 文档")
-print(f"生成: {sys.argv[3]}")
+for report_name in copied_reports:
+    report_stem = report_name.removesuffix(".md")
+    lines.append(f"- [[../loop/docs/reports/{report_name}|{report_stem}]]\n")
+lines.append("\n## 分享材料\n\n")
+for share_name in copied_share_docs:
+    share_stem = share_name.removesuffix(".md")
+    lines.append(f"- [[../loop/docs/share/{share_name}|{share_stem}]]\n")
+lines.append("\n## 配置与能力注册表\n\n")
+for config_name in copied_configs:
+    config_stem = config_name.removesuffix(".json")
+    lines.append(f"- [[../loop/docs/config/{config_name}|{config_stem}]]\n")
+if (out_dir / "sinan-capabilities.md").exists():
+    lines.append("- [[../loop/docs/sinan-capabilities.md|司南能力目录]]\n")
+Path(sys.argv[4]).write_text("".join(lines), encoding="utf-8")
+print(f"镜像沉淀: {len(copied)} 文档, {len(copied_reports)} 报告, {len(copied_share_docs)} 分享材料, {len(copied_configs)} 配置")
+print(f"生成: {sys.argv[4]}")
 PY
 else
   echo "SKIP: docs/ai-work-orchestration 不存在"
@@ -736,21 +918,116 @@ echo ""
 echo "## 6. 生成 Loop run 证据页"
 if [[ -d "$REPO_ROOT/runs" ]]; then
   python3 - <<'PY' "$REPO_ROOT/runs" "$TMP_DIR/loop-runs"
+import json
 from pathlib import Path
 import sys
 
 runs_dir = Path(sys.argv[1])
 out_dir = Path(sys.argv[2])
 out_dir.mkdir(parents=True, exist_ok=True)
+
+
+def gate_summary(path):
+    if not path.exists() or path.stat().st_size == 0:
+        return ("MISSING", "MISSING", "MISSING")
+    text = path.read_text(encoding="utf-8", errors="replace")
+    result = "UNKNOWN"
+    score = "UNKNOWN"
+    failures = "UNKNOWN"
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("- Result:"):
+            result = stripped.split(":", 1)[1].strip()
+        elif stripped.startswith("- Score:"):
+            score = stripped.split(":", 1)[1].strip()
+        elif stripped.startswith("- Required failures:"):
+            failures = stripped.split(":", 1)[1].strip()
+    return (result, score, failures)
+
+
+
+
+def policy_summary(path):
+    if not path.exists() or path.stat().st_size == 0:
+        return ("MISSING", "MISSING")
+    text = path.read_text(encoding="utf-8", errors="replace")
+    result = "UNKNOWN"
+    task_type = "UNKNOWN"
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("- Result:"):
+            result = stripped.split(":", 1)[1].strip()
+        elif stripped.startswith("- Task type:"):
+            task_type = stripped.split(":", 1)[1].strip()
+    return (result, task_type)
+
+
+def exception_summary(path):
+    if not path.exists() or path.stat().st_size == 0:
+        return ("MISSING", "MISSING", "MISSING")
+    text = path.read_text(encoding="utf-8", errors="replace")
+    status = "UNKNOWN"
+    approved_by = "UNKNOWN"
+    expires = "UNKNOWN"
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("- Status:"):
+            status = stripped.split(":", 1)[1].strip()
+        elif stripped.startswith("- Approved by:"):
+            approved_by = stripped.split(":", 1)[1].strip()
+        elif stripped.startswith("- Expires:"):
+            expires = stripped.split(":", 1)[1].strip()
+    return (status, approved_by, expires)
+
+
+def omit_stage_remote_writes(text):
+    lines = text.splitlines(keepends=True)
+    output = []
+    skipping = False
+    omitted = False
+    for line in lines:
+        if line.startswith("## Remote Writes"):
+            skipping = True
+            omitted = True
+            continue
+        if skipping and line.startswith("## "):
+            skipping = False
+        if not skipping:
+            output.append(line)
+    if omitted:
+        output.append("\n## Remote Writes\n\n")
+        output.append("_See the latest Writeback Summary section above for authoritative remote write results._\n")
+    return "".join(output)
+
+
 count = 0
-for run_dir in sorted(runs_dir.iterdir(), key=lambda item: item.name, reverse=True)[:50]:
+for run_dir in sorted(runs_dir.iterdir(), key=lambda item: item.name, reverse=True):
     if not run_dir.is_dir():
         continue
     summary = run_dir / "summary.md"
     stage = run_dir / "stage-report.md"
     verify = run_dir / "verification-report.md"
+    execution_preflight = run_dir / "execution-preflight.md"
+    closeout_summary = run_dir / "closeout" / "closeout-summary.md"
+    continuation_gate = run_dir / "continuation-gate.md"
+    execution_time_contract = run_dir / "execution-time-contract.md"
+    time_calibration = run_dir / "time-estimation-calibration.md"
+    clarification = run_dir / "clarification.md"
+    clarification_gate = run_dir / "clarification-gate.md"
+    writeback = run_dir / "writeback-summary.md"
+    share_preflight = run_dir / "share-preflight-summary.md"
+    gate_policy = run_dir / "gate-policy-check.md"
+    gate_exception = run_dir / "gate-policy-exception.md"
+    gate_paths = {
+        "Requirement": run_dir / "requirement-gate.md",
+        "Design": run_dir / "design-gate.md",
+        "Clarification": clarification_gate,
+        "Deliverable": run_dir / "deliverable-gate.md",
+    }
     if not summary.exists():
         continue
+    if count >= 50:
+        break
     lines = []
     lines.append("---\n")
     lines.append("type: loop_run\n")
@@ -759,10 +1036,98 @@ for run_dir in sorted(runs_dir.iterdir(), key=lambda item: item.name, reverse=Tr
     lines.append("generated: auto\n")
     lines.append("---\n\n")
     lines.append(f"# Loop Run: {run_dir.name}\n\n")
+    lines.append("## Gate Results\n\n")
+    lines.append("| Gate | Result | Score | Required Failures |\n")
+    lines.append("|---|---|---|---|\n")
+    for gate_name, gate_path in gate_paths.items():
+        result, score, failures = gate_summary(gate_path)
+        lines.append(f"| {gate_name} | {result} | {score} | {failures} |\n")
+    policy_result, policy_task_type = policy_summary(gate_policy)
+    exception_status, exception_approved_by, exception_expires = exception_summary(gate_exception)
+    lines.append("\n")
+    lines.append("## Gate Policy\n\n")
+    lines.append("| Item | Value |\n")
+    lines.append("|---|---|\n")
+    lines.append(f"| Policy result | {policy_result} |\n")
+    lines.append(f"| Task type | {policy_task_type} |\n")
+    lines.append(f"| Exception status | {exception_status} |\n")
+    lines.append(f"| Exception approved by | {exception_approved_by} |\n")
+    lines.append(f"| Exception expires | {exception_expires} |\n")
+    lines.append("\n")
     lines.append("## Summary\n\n")
     lines.append(summary.read_text(encoding="utf-8"))
+    if execution_preflight.exists():
+        execution_preflight_text = execution_preflight.read_text(encoding="utf-8")
+        lines.append("\n\n## Execution Preflight\n\n")
+        lines.append(execution_preflight_text[:2000])
+        if len(execution_preflight_text) > 2000:
+            lines.append("\n\n_(摘录前 2000 字符，完整内容见 runs/ 目录)_\n")
+    if closeout_summary.exists():
+        closeout_summary_text = closeout_summary.read_text(encoding="utf-8")
+        lines.append("\n\n## Closeout Summary\n\n")
+        lines.append(closeout_summary_text[:2000])
+        if len(closeout_summary_text) > 2000:
+            lines.append("\n\n_(摘录前 2000 字符，完整内容见 runs/ 目录)_\n")
+    if continuation_gate.exists():
+        continuation_gate_text = continuation_gate.read_text(encoding="utf-8")
+        lines.append("\n\n## Continuation Gate\n\n")
+        lines.append(continuation_gate_text[:2000])
+        if len(continuation_gate_text) > 2000:
+            lines.append("\n\n_(摘录前 2000 字符，完整内容见 runs/ 目录)_\n")
+    if execution_time_contract.exists():
+        execution_time_contract_text = execution_time_contract.read_text(encoding="utf-8")
+        lines.append("\n\n## Execution Time Contract\n\n")
+        lines.append(execution_time_contract_text[:2000])
+        if len(execution_time_contract_text) > 2000:
+            lines.append("\n\n_(摘录前 2000 字符，完整内容见 runs/ 目录)_\n")
+    if time_calibration.exists():
+        time_calibration_text = time_calibration.read_text(encoding="utf-8")
+        lines.append("\n\n## Time Estimation Calibration\n\n")
+        lines.append(time_calibration_text[:2000])
+        if len(time_calibration_text) > 2000:
+            lines.append("\n\n_(摘录前 2000 字符，完整内容见 runs/ 目录)_\n")
+    if clarification.exists():
+        clarification_text = clarification.read_text(encoding="utf-8")
+        lines.append("\n\n## Clarification Draft\n\n")
+        lines.append(clarification_text[:3000])
+        if len(clarification_text) > 3000:
+            lines.append("\n\n_(摘录前 3000 字符，完整内容见 runs/ 目录)_\n")
+    if clarification_gate.exists():
+        clarification_gate_text = clarification_gate.read_text(encoding="utf-8")
+        lines.append("\n\n## Clarification Gate\n\n")
+        lines.append(clarification_gate_text[:2000])
+        if len(clarification_gate_text) > 2000:
+            lines.append("\n\n_(摘录前 2000 字符，完整内容见 runs/ 目录)_\n")
+    if writeback.exists():
+        writeback_text = writeback.read_text(encoding="utf-8")
+        lines.append("\n\n## Writeback Summary\n\n")
+        lines.append(writeback_text[:2000])
+        if len(writeback_text) > 2000:
+            lines.append("\n\n_(摘录前 2000 字符，完整内容见 runs/ 目录)_\n")
+    if share_preflight.exists():
+        share_preflight_text = share_preflight.read_text(encoding="utf-8")
+        lines.append("\n\n## Share Preflight Summary\n\n")
+        lines.append(share_preflight_text[:2000])
+        if len(share_preflight_text) > 2000:
+            lines.append("\n\n_(摘录前 2000 字符，完整内容见 runs/ 目录)_\n")
+    share_preflight_json = run_dir / "share-preflight-summary.json"
+    if share_preflight_json.exists():
+        try:
+            share_data = json.loads(share_preflight_json.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            share_data = {}
+        time_gates = (share_data.get("golden_path") or {}).get("time_contract_gates") or []
+        if time_gates:
+            lines.append("\n\n## Share Time Contract Gate Snapshot\n\n")
+            lines.append("| Gate | Status | Detail |\n")
+            lines.append("|---|---|---|\n")
+            for item in time_gates:
+                name = str(item.get("name") or "")
+                status = str(item.get("status") or "")
+                detail = str(item.get("detail") or "").replace("|", "\\|")
+                lines.append(f"| {name} | {status} | {detail} |\n")
     if stage.exists():
-        stage_text = stage.read_text(encoding="utf-8")
+        stage_text = omit_stage_remote_writes(stage.read_text(encoding="utf-8"))
         lines.append("\n\n## Stage Report\n\n")
         lines.append(stage_text[:3000])
         if len(stage_text) > 3000:
@@ -817,3 +1182,58 @@ fi
 
 echo ""
 echo "完成。DRY_RUN=$DRY_RUN"
+
+if [[ "$WRITE_OPERATION_LOG" == "true" ]]; then
+  mkdir -p "$OPERATION_LOG_DIR"
+  operation_log="$OPERATION_LOG_DIR/obsidian-sync-$(date '+%Y%m%d-%H%M%S').md"
+  latest_operation_log="$OPERATION_LOG_DIR/obsidian-sync.latest.md"
+  python3 - <<'PY' "$operation_log" "$latest_operation_log" "$SYNC_STARTED_AT" "$(date '+%F %T %z')" "$VAULT_PATH" "$REPO_ROOT" "$JAVA_ROOT" "$GENERATED" "$DRY_RUN" "$ARCHIVED_ISSUE_RETENTION_DAYS"
+import shutil
+import sys
+from pathlib import Path
+
+(
+    operation_log,
+    latest_operation_log,
+    started_at,
+    finished_at,
+    vault_path,
+    repo_root,
+    java_root,
+    generated,
+    dry_run,
+    archived_retention_days,
+) = sys.argv[1:]
+
+text = f"""# Operation Log — Obsidian Sync
+
+## Scope
+
+- Started at: {started_at}
+- Finished at: {finished_at}
+- Vault: {vault_path}
+- Repo: {repo_root}
+- Java root: {java_root}
+- Generated root: {generated}
+- Dry run: {dry_run}
+- Archived issue retention days: {archived_retention_days}
+
+## Side Effects
+
+- Obsidian generated filesystem write: {"yes" if dry_run == "false" else "no"}
+- Multica/Feishu/Git remote/deploy writes: no
+
+## Recursive Sync Guard
+
+- This operation log is written under state/operations.
+- state/operations is local audit evidence and is intentionally not mirrored by obsidian-sync.
+- Do not create a phase report only to record that an Obsidian sync happened; batch sync logs with the next substantive documentation update if needed.
+"""
+
+path = Path(operation_log)
+path.write_text(text, encoding="utf-8")
+shutil.copyfile(path, latest_operation_log)
+print(f"operation_log: {operation_log}")
+print(f"latest_operation_log: {latest_operation_log}")
+PY
+fi

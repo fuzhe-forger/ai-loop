@@ -66,8 +66,11 @@ fi
 json_content="$(python3 - <<'PY' "$next_actor" "${metadata:-}"
 import json
 import sys
+from pathlib import Path
 
 next_actor, metadata = sys.argv[1:]
+policy_path = Path("config/routing-policy.json")
+policy = json.loads(policy_path.read_text(encoding="utf-8")) if policy_path.is_file() else {"actors": {}}
 
 routes = {
     "execution_agent": {
@@ -107,13 +110,19 @@ route = routes.get(next_actor, {
     "role": "调度/总控",
     "reason": "未知 next_actor，交由调度角色判断",
 })
+policy_route = (policy.get("actors") or {}).get(next_actor) or (policy.get("actors") or {}).get(policy.get("default_actor", "scheduler")) or {}
+lane = policy_route.get("lane") or "routing"
 
 data = {
     "schema_version": 1,
+    "contract": "route-result.v1",
+    "result": "PASSED",
     "next_actor": next_actor,
     "assigned_actor": route["assigned_actor"],
     "role": route["role"],
+    "lane": lane,
     "reason": route["reason"],
+    "policy": str(policy_path),
     "source_metadata": metadata,
     "remote_write": False,
 }
@@ -134,7 +143,9 @@ print(f"""# Actor Route
 - Next actor: {data['next_actor']}
 - Assigned actor: {data['assigned_actor']}
 - Role: {data['role']}
+- Lane: {data['lane']}
 - Reason: {data['reason']}
+- Policy: {data['policy']}
 - Source metadata: {data['source_metadata'] or 'none'}
 - Remote write: {str(data['remote_write']).lower()}
 """)

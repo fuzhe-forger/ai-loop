@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "default_action": {
+    "category": "unknown",
+    "side_effect": "unknown",
+    "requires_approval": true,
+    "decision_without_approval": "stop_for_approval",
+    "reason": "unknown action defaults to approval required"
+  },
+  "actions": {
+    "local-edit": {
+      "category": "local",
+      "side_effect": "local_files",
+      "requires_approval": false,
+      "decision_without_approval": "proceed",
+      "reason": "local-only action"
+    },
+    "verify": {
+      "category": "local",
+      "side_effect": "local_files",
+      "requires_approval": false,
+      "decision_without_approval": "proceed",
+      "reason": "local-only action"
+    },
+    "collect-evidence": {
+      "category": "local",
+      "side_effect": "local_files",
+      "requires_approval": false,
+      "decision_without_approval": "proceed",
+      "reason": "local-only action"
+    },
+    "refresh-evidence": {
+      "category": "local",
+      "side_effect": "local_files",
+      "requires_approval": false,
+      "decision_without_approval": "proceed",
+      "reason": "local-only action"
+    },
+    "share-preflight": {
+      "category": "local",
+      "side_effect": "local_files",
+      "requires_approval": false,
+      "decision_without_approval": "proceed",
+      "reason": "local-only action"
+    },
+    "golden-path-check": {
+      "category": "local",
+      "side_effect": "local_files",
+      "requires_approval": false,
+      "decision_without_approval": "proceed",
+      "reason": "local-only action"
+    },
+    "operation-log": {
+      "category": "local",
+      "side_effect": "local_files",
+      "requires_approval": false,
+      "decision_without_approval": "proceed",
+      "reason": "local-only action"
+    },
+    "obsidian-sync": {
+      "category": "external_write",
+      "side_effect": "obsidian_generated_filesystem_write",
+      "requires_approval": false,
+      "decision_without_approval": "proceed",
+      "reason": "standing approval granted for Obsidian generated sync only"
+    },
+    "multica-comment": {
+      "category": "remote_write",
+      "side_effect": "multica_comment_write",
+      "requires_approval": true,
+      "decision_without_approval": "stop_for_approval",
+      "reason": "writes a Multica comment"
+    },
+    "multica-status": {
+      "category": "remote_write",
+      "side_effect": "multica_status_update",
+      "requires_approval": true,
+      "decision_without_approval": "stop_for_approval",
+      "reason": "changes Multica issue workflow status"
+    },
+    "multica-metadata": {
+      "category": "remote_write",
+      "side_effect": "multica_metadata_write",
+      "requires_approval": true,
+      "decision_without_approval": "stop_for_approval",
+      "reason": "writes Multica metadata KV"
+    },
+    "feishu-write": {
+      "category": "remote_write",
+      "side_effect": "feishu_document_or_base_write",
+      "requires_approval": true,
+      "decision_without_approval": "stop_for_approval",
+      "reason": "writes Feishu content"
+    },
+    "git-remote": {
+      "category": "remote_write",
+      "side_effect": "git_remote_push_or_pr",
+      "requires_approval": true,
+      "decision_without_approval": "stop_for_approval",
+      "reason": "writes to remote Git"
+    },
+    "deploy": {
+      "category": "production_or_runtime_write",
+      "side_effect": "deployment_or_runtime_change",
+      "requires_approval": true,
+      "decision_without_approval": "stop_for_approval",
+      "reason": "changes deployed/runtime state"
+    },
+    "tool-install": {
+      "category": "local_environment_write",
+      "side_effect": "local_tool_download_or_install",
+      "requires_approval": true,
+      "decision_without_approval": "stop_for_approval",
+      "reason": "downloads or installs local tooling"
+    },
+    "codex-config": {
+      "category": "local_agent_config_write",
+      "side_effect": "codex_config_or_instruction_update",
+      "requires_approval": true,
+      "decision_without_approval": "stop_for_approval",
+      "reason": "changes Codex configuration or global instructions"
+    }
+  }
+}

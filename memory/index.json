@@ -1,35 +1,47 @@
 {
   "schema_version": 1,
   "project": "ai-loop",
-  "updated_at": "2026-06-16T08:00:00Z",
+  "updated_at": "2026-06-23T09:16:40Z",
   "constraints": [
     {
       "id": "C001",
       "type": "architecture",
       "title": "本地优先",
       "file": "architecture-constraints.md",
-      "tags": ["local", "safety"]
+      "tags": [
+        "local",
+        "safety"
+      ]
     },
     {
       "id": "C002",
       "type": "architecture",
       "title": "证据优先",
       "file": "architecture-constraints.md",
-      "tags": ["evidence", "gate"]
+      "tags": [
+        "evidence",
+        "gate"
+      ]
     },
     {
       "id": "C003",
       "type": "architecture",
       "title": "人控回写",
       "file": "architecture-constraints.md",
-      "tags": ["writeback", "human-in-command"]
+      "tags": [
+        "writeback",
+        "human-in-command"
+      ]
     },
     {
       "id": "C004",
       "type": "security",
       "title": "不存密钥",
       "file": "architecture-constraints.md",
-      "tags": ["security", "secret"]
+      "tags": [
+        "security",
+        "secret"
+      ]
     }
   ],
   "decisions": [],
@@ -38,27 +50,57 @@
     {
       "category": "code-style",
       "file": "review-preferences.md",
-      "tags": ["bash", "python", "markdown"]
+      "tags": [
+        "bash",
+        "python",
+        "markdown"
+      ]
     },
     {
       "category": "naming",
       "file": "review-preferences.md",
-      "tags": ["kebab-case", "snake_case"]
+      "tags": [
+        "kebab-case",
+        "snake_case"
+      ]
     },
     {
       "category": "documentation",
       "file": "review-preferences.md",
-      "tags": ["help", "report", "design"]
+      "tags": [
+        "help",
+        "report",
+        "design"
+      ]
     },
     {
       "category": "testing",
       "file": "review-preferences.md",
-      "tags": ["positive", "negative", "gate"]
+      "tags": [
+        "positive",
+        "negative",
+        "gate"
+      ]
     },
     {
       "category": "commit",
       "file": "review-preferences.md",
-      "tags": ["single-step", "clear-message", "no-mix"]
+      "tags": [
+        "single-step",
+        "clear-message",
+        "no-mix"
+      ]
+    },
+    {
+      "category": "solution-template",
+      "file": "solution-template-preferences.md",
+      "tags": [
+        "technical-design",
+        "mit-template",
+        "architecture",
+        "detailed-design",
+        "review-pack"
+      ]
     }
   ],
   "cases": [
@@ -68,9 +110,46 @@
       "title": "AI 工作编排证据链建设",
       "file": "cases/FUZ-554-evidence-chain.md",
       "type": "infrastructure",
-      "tags": ["evidence", "loop", "orchestration", "gate", "agent-crew"],
+      "tags": [
+        "evidence",
+        "loop",
+        "orchestration",
+        "gate",
+        "agent-crew"
+      ],
       "status": "phase-c-completed",
-      "runs": 22
+      "runs": 22,
+      "review_state": "accepted"
+    },
+    {
+      "id": "CASE-FUZ-554-NORTH-STAR-TASK-BOARD",
+      "issue": "FUZ-554",
+      "title": "北极星任务板治理案例",
+      "file": "cases/FUZ-554-north-star-task-board.md",
+      "tags": [
+        "north-star",
+        "task-board",
+        "timing",
+        "evidence",
+        "sinan"
+      ],
+      "review_state": "accepted"
+    }
+  ],
+  "templates": [
+    {
+      "id": "TPL001",
+      "title": "MIT 技术设计方案（架构+详细）标准&模版 V1.15",
+      "file": "templates/mit-technical-design-v1.15.md",
+      "source": "https://mi.feishu.cn/wiki/Wf2gw6EVsiija9k5AUqcKt8CntX",
+      "type": "technical-design",
+      "status": "accepted",
+      "tags": [
+        "technical-design",
+        "architecture",
+        "detailed-design",
+        "mit"
+      ]
     }
   ]
 }

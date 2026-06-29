@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "name": "organization-policy",
+  "description": "Phase C organization layer contract for routing, policy, side-effect gate, and review orchestration.",
+  "modules": {
+    "routing": {
+      "required_fields": ["issue", "run_id", "task_type", "actor", "tier"],
+      "entrypoints": ["scripts/classify-task.sh", "scripts/route-actor.sh", "scripts/loop-intake-gate.sh"]
+    },
+    "policy": {
+      "required_fields": ["required_gates", "timebox", "stop_rule", "status_policy"],
+      "entrypoints": ["scripts/gate-policy-check.sh", "scripts/loop-execution-preflight.sh", "scripts/loop-continuation-gate.sh"]
+    },
+    "side_effect_gate": {
+      "required_fields": ["side_effects", "approval_required", "approval_boundary"],
+      "entrypoints": ["scripts/approval-boundary.sh", "scripts/writeback-gate.sh", "scripts/metadata-writeback.sh"]
+    },
+    "review_orchestration": {
+      "required_fields": ["evidence_summary", "review_packet", "verification_report", "verdict"],
+      "entrypoints": ["scripts/collect-evidence.sh", "scripts/review-packet.sh", "scripts/verify-toolchain.sh", "scripts/evaluate-state.sh"]
+    }
+  },
+  "result_policy": {
+    "passed_when": "all module entrypoints exist and run evidence contains preflight, gate, verification, and evidence summary artifacts",
+    "remote_write_policy": "human-approved only"
+  }
+}

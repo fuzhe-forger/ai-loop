@@ -295,7 +295,11 @@
         "scripts/memory-query.sh",
         "scripts/recommend-memory.sh",
         "scripts/extract-experience.sh",
-        "scripts/memory-quality-check.sh"
+        "scripts/memory-quality-check.sh",
+        "scripts/memory-review-state.sh",
+        "scripts/memory-promote-draft.sh",
+        "scripts/phase-d-closeout.sh",
+        "scripts/phase-d-closeout-check.sh"
       ],
       "configs": [
         "config/project-memory-policy.json"
@@ -303,7 +307,17 @@
       "evidence_outputs": [
         "runs/<run-id>/memory-quality-report.md",
         "runs/<run-id>/memory-quality-report.json",
-        "memory/cases/FUZ-554-north-star-task-board.md"
+        "memory/cases/FUZ-554-north-star-task-board.md",
+        "runs/<run-id>/memory-review-state.md",
+        "runs/<run-id>/memory-review-state.json",
+        "runs/<run-id>/memory-case-draft.md",
+        "runs/<run-id>/memory-index-entry-draft.json",
+        "runs/<run-id>/memory-promote-draft.md",
+        "runs/<run-id>/memory-promote-draft.json",
+        "runs/<run-id>/phase-d-closeout/phase-d-closeout.md",
+        "runs/<run-id>/phase-d-closeout/phase-d-closeout.json",
+        "runs/<run-id>/phase-d-closeout-check.md",
+        "runs/<run-id>/phase-d-closeout-check.json"
       ],
       "docs": [
         "docs/ai-work-orchestration/15-project-memory-model.md",
@@ -312,7 +326,14 @@
       ],
       "verification": [
         "scripts/memory-quality-check.sh --output <file> --json-output <file>",
-        "scripts/memory-query.sh --search north-star"
+        "scripts/memory-query.sh --search north-star",
+        "scripts/memory-review-state.sh --case-id <case-id> --to <state>",
+        "scripts/memory-review-state.sh --case-id <case-id> --from <state> --to <state> --execute",
+        "scripts/extract-experience.sh --run-id <run-id> --promote-to-memory",
+        "scripts/memory-promote-draft.sh --case-draft <file> --index-entry <file>",
+        "scripts/memory-promote-draft.sh --case-draft <file> --index-entry <file> --execute",
+        "scripts/phase-d-closeout.sh --run-id <run-id>",
+        "scripts/phase-d-closeout-check.sh --closeout-json <file>"
       ],
       "side_effect_policy": "local memory files only; generated Obsidian sync is preapproved"
     },
@@ -379,25 +400,44 @@
         "scripts/sinan-ops-dashboard.sh",
         "scripts/multi-repo-evidence.sh",
         "scripts/external-adapter-check.sh",
+        "scripts/sinan-doctor.sh",
+        "scripts/onboarding-drill-check.sh",
+        "scripts/sinan-next.sh",
         "scripts/sinan.sh"
       ],
       "configs": [
-        "config/sinan-version.json"
+        "config/sinan-version.json",
+        "config/phase-cd-next-tasks.json",
+        "config/phase-cd-preflight-memory-state-tasks.json",
+        "config/north-star-tasks.json"
       ],
       "evidence_outputs": [
         "runs/<run-id>/v2-acceptance.md",
         "runs/<run-id>/v2-acceptance.json",
         "runs/<run-id>/ops-dashboard.md",
-        "runs/<run-id>/multi-repo-evidence.md"
+        "runs/<run-id>/multi-repo-evidence.md",
+        "runs/<run-id>/sinan-doctor.md",
+        "runs/<run-id>/sinan-doctor.json",
+        "runs/<run-id>/onboarding-drill-check.md",
+        "runs/<run-id>/onboarding-drill-check.json",
+        "runs/<run-id>/sinan-next.md",
+        "runs/<run-id>/sinan-next.json"
       ],
       "docs": [
         "docs/ai-work-orchestration/product/sinan-onboarding-drill.md",
         "docs/ai-work-orchestration/product/cross-repo-evidence-contract.md",
-        "docs/ai-work-orchestration/product/sinan-v1-to-v2-roadmap.md"
+        "docs/ai-work-orchestration/product/sinan-v1-to-v2-roadmap.md",
+        "tasks/sinan-onboarding-local-drill.md"
       ],
       "verification": [
         "scripts/sinan-v2-acceptance.sh --run-id <run-id>",
-        "scripts/sinan.sh v2-acceptance --run-id <run-id>"
+        "scripts/sinan.sh v2-acceptance --run-id <run-id>",
+        "scripts/sinan-doctor.sh --run-id <run-id>",
+        "scripts/sinan.sh doctor --run-id <run-id>",
+        "scripts/onboarding-drill-check.sh --drill-dir runs/onboarding",
+        "scripts/sinan.sh onboarding-drill-check --drill-dir runs/onboarding",
+        "scripts/sinan-next.sh --run-id <run-id>",
+        "scripts/sinan.sh next --run-id <run-id>"
       ],
       "side_effect_policy": "local-only acceptance and inventory; remote Git/deploy/production remain prohibited without approval"
     },

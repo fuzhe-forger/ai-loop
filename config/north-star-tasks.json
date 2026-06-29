@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "scope": "Phase I local completion package",
+  "generated_from": "docs/ai-work-orchestration/09-north-star.md",
+  "estimation_model": {
+    "rule": "task_quantity_first_calibration_second",
+    "raw_estimate_source": "explicit task workload",
+    "calibration_formula": "if bucket has >=3 trusted samples, calibrated=round(raw*0.8 + bucket_recommended*0.2); otherwise use raw estimate",
+    "confidence_rule": "high when bucket has >=10 samples, medium when 3-9, low when <3"
+  },
+  "tasks": [
+    {
+      "id": "NST-001",
+      "metric": "可验收完成",
+      "phase": "Phase I",
+      "title": "建立北极星任务总表",
+      "task_type": "documentation",
+      "raw_estimate_minutes": 4,
+      "priority": "P0",
+      "acceptance": "北极星指标被拆成机器可读任务，任务包含验收、验证、产物和估时字段。",
+      "verification": "north-star-task-board JSON can enumerate all NST tasks",
+      "output_paths": ["config/north-star-tasks.json"],
+      "side_effects": "local files only"
+    },
+    {
+      "id": "NST-002",
+      "metric": "可信时间优先",
+      "phase": "Phase I",
+      "title": "实现任务量优先的估时任务板",
+      "task_type": "local_script_patch",
+      "raw_estimate_minutes": 8,
+      "priority": "P0",
+      "acceptance": "任务板先读取任务量原始估时，再用历史桶做小权重修正，并输出开放任务分钟数。",
+      "verification": "north-star-task-board JSON exposes raw_estimate_minutes, calibrated_estimate_minutes, calibration_bucket, calibration_confidence",
+      "output_paths": ["scripts/north-star-task-board.sh"],
+      "side_effects": "local files only"
+    },
+    {
+      "id": "NST-003",
+      "metric": "结构化证据",
+      "phase": "Phase B",
+      "title": "把北极星任务板接入 run evidence",
+      "task_type": "local_script_patch",
+      "raw_estimate_minutes": 5,
+      "priority": "P1",
+      "acceptance": "collect-evidence/evidence-checklist/evidence-index 能显示 north-star-task-board 产物。",
+      "verification": "collect-evidence JSON contains north_star_task_board and north_star_task_board_json artifacts",
+      "output_paths": ["runs/<run-id>/north-star-task-board.md", "runs/<run-id>/north-star-task-board.json"],
+      "side_effects": "local run artifacts only"
+    },
+    {
+      "id": "NST-004",
+      "metric": "小切片快闭环",
+      "phase": "Phase I",
+      "title": "记录分片执行和估时调整规则",
+      "task_type": "documentation",
+      "raw_estimate_minutes": 4,
+      "priority": "P1",
+      "acceptance": "连续执行指南说明任务量估时、经验修正、执行后调整和继续条件。",
+      "verification": "guide mentions task_quantity_first_calibration_second and calibrated_estimate_minutes",
+      "output_paths": ["docs/ai-work-orchestration/share/sinan-continuous-execution-guide.md"],
+      "side_effects": "local docs only"
+    },
+    {
+      "id": "NST-005",
+      "metric": "副作用可控",
+      "phase": "Phase E",
+      "title": "验证北极星任务不触发远程写入",
+      "task_type": "local_script_patch",
+      "raw_estimate_minutes": 3,
+      "priority": "P1",
+      "acceptance": "任务板和验证报告明确本轮只写本地文件与 Obsidian generated，飞书/Multica 不写。",
+      "verification": "north-star task board side_effects are local or preapproved Obsidian generated only",
+      "output_paths": ["runs/<run-id>/north-star-task-board.json"],
+      "side_effects": "local files and preapproved Obsidian generated sync only"
+    },
+    {
+      "id": "NST-006",
+      "metric": "知识可复查",
+      "phase": "Phase D",
+      "title": "Obsidian generated 读回北极星任务证据",
+      "task_type": "local_script_patch",
+      "raw_estimate_minutes": 4,
+      "priority": "P2",
+      "acceptance": "Obsidian generated run 页能读到 north-star-task-board 或对应验证证据。",
+      "verification": "rg reads north-star-task-board references from 99-generated loop run page or docs mirror",
+      "output_paths": ["/mnt/d/JAVA/knowledge/tiandao/99-generated/loop/runs/<run-id>.md"],
+      "side_effects": "preapproved Obsidian 99-generated write only"
+    },
+    {
+      "id": "NST-007",
+      "metric": "token 不空转",
+      "phase": "Phase H",
+      "title": "验证长循环输出压缩规则仍可见",
+      "task_type": "documentation",
+      "raw_estimate_minutes": 2,
+      "priority": "P2",
+      "acceptance": "指南保留短句、证据优先、不压缩审批风险的规则。",
+      "verification": "verify-toolchain checks long-loop compression guidance",
+      "output_paths": ["docs/ai-work-orchestration/share/sinan-continuous-execution-guide.md"],
+      "side_effects": "local docs only"
+    },
+    {
+      "id": "NST-008",
+      "metric": "可复盘报告",
+      "phase": "Phase F",
+      "title": "生成北极星任务执行完整报告",
+      "task_type": "documentation",
+      "raw_estimate_minutes": 5,
+      "priority": "P0",
+      "acceptance": "报告列出全量任务、分片执行、估时调整、验证结果、剩余风险和下一轮建议。",
+      "verification": "north-star-execution-report.md includes task table, timing table, verification table",
+      "output_paths": ["runs/<run-id>/north-star-execution-report.md"],
+      "side_effects": "local run artifact only"
+    }
+  ]
+}

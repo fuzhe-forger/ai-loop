@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "name": "phase-cd-preflight-memory-state-tasks",
+  "description": "Phase C/D slice for organization-policy preflight integration and project-memory review_state transitions.",
+  "tasks": [
+    {
+      "id": "CDP-001",
+      "metric": "Phase C 组织层",
+      "phase": "Phase C",
+      "title": "Preflight 输出组织策略摘要",
+      "task_type": "local_script_patch",
+      "raw_estimate_minutes": 5,
+      "priority": "P0",
+      "acceptance": "loop-execution-preflight JSON/MD 包含 organization_policy 摘要与 module 状态。",
+      "verification": "execution-preflight JSON has organization_policy.result and modules.",
+      "output_paths": ["scripts/loop-execution-preflight.sh"],
+      "side_effects": "local script only"
+    },
+    {
+      "id": "CDP-002",
+      "metric": "Phase D 项目记忆",
+      "phase": "Phase D",
+      "title": "实现记忆 review_state 流转脚本",
+      "task_type": "local_script_patch",
+      "raw_estimate_minutes": 6,
+      "priority": "P0",
+      "acceptance": "memory-review-state 可校验 allowed_review_state 并更新 memory/index.json。",
+      "verification": "memory-review-state transition outputs PASSED JSON and remote_writes=false.",
+      "output_paths": ["scripts/memory-review-state.sh"],
+      "side_effects": "local memory index update only"
+    },
+    {
+      "id": "CDP-003",
+      "metric": "证据治理",
+      "phase": "Phase C/D",
+      "title": "接入 memory-review-state 证据链",
+      "task_type": "local_script_patch",
+      "raw_estimate_minutes": 4,
+      "priority": "P0",
+      "acceptance": "collect-evidence、evidence-checklist、evidence-index 可展示 memory-review-state 产物。",
+      "verification": "collect-evidence JSON contains memory_review_state and memory_review_state_json.",
+      "output_paths": ["scripts/collect-evidence.sh", "scripts/evidence-checklist.sh", "scripts/evidence-index.sh"],
+      "side_effects": "local script only"
+    },
+    {
+      "id": "CDP-004",
+      "metric": "工具链校验",
+      "phase": "Phase C/D",
+      "title": "补充 verify-toolchain 断言",
+      "task_type": "local_script_patch",
+      "raw_estimate_minutes": 4,
+      "priority": "P0",
+      "acceptance": "verify-toolchain 覆盖 memory-review-state help、transition 和证据字段。",
+      "verification": "verify-toolchain --strict --state-gate passes relevant checks.",
+      "output_paths": ["scripts/verify-toolchain.sh"],
+      "side_effects": "local verification only"
+    },
+    {
+      "id": "CDP-005",
+      "metric": "执行闭环",
+      "phase": "Phase C/D",
+      "title": "生成本轮任务板与执行报告",
+      "task_type": "documentation",
+      "raw_estimate_minutes": 3,
+      "priority": "P1",
+      "acceptance": "run 目录包含 phase-cd-preflight-memory-state-task-board 和 execution-report。",
+      "verification": "task board JSON total_tasks >= 5 and execution report present.",
+      "output_paths": ["runs/<run-id>/phase-cd-preflight-memory-state-task-board.md", "runs/<run-id>/phase-cd-preflight-memory-state-task-board.json", "runs/<run-id>/phase-cd-preflight-memory-state-execution-report.md"],
+      "side_effects": "local run artifacts only"
+    },
+    {
+      "id": "CDP-006",
+      "metric": "时间治理",
+      "phase": "Phase C/D",
+      "title": "记录预估与真实耗时",
+      "task_type": "local_script_patch",
+      "raw_estimate_minutes": 3,
+      "priority": "P1",
+      "acceptance": "execution-time-contract 记录本轮 12-18 分钟估时和真实耗时。",
+      "verification": "execution-time-contract-preflight-memory-state JSON present.",
+      "output_paths": ["runs/<run-id>/execution-time-contract-preflight-memory-state.md", "runs/<run-id>/execution-time-contract-preflight-memory-state.json"],
+      "side_effects": "local run artifacts only"
+    }
+  ]
+}

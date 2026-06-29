@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "product": "司南",
+  "version": "1.0.0",
+  "codename": "governed-ai-delivery",
+  "status": "released",
+  "released_at": "2026-06-24",
+  "baseline_version": "0.2.0",
+  "north_star": "用户给出目标后，系统能在本地连续执行到可验收结果；每一步都有证据，每个副作用都有人控，每轮估时和实际耗时误差持续校准。",
+  "release_gates": [
+    "local_gate_specs_present",
+    "time_contract_present",
+    "evidence_standard_present",
+    "writeback_boundary_present",
+    "project_memory_present",
+    "role_routing_present",
+    "share_pack_present",
+    "known_limits_documented",
+    "no_deploy_performed"
+  ]
+}

@@ -5,12 +5,12 @@ show_help() {
   cat <<'HELP'
 Usage: scripts/classify-task.sh --issue <issue> [options]
 
-Classify task type, risk level, and complexity using AI or heuristics.
+Classify task type, risk, tier, and clarification need using deterministic heuristics or AI fallback.
 
 Options:
   --issue <issue>     Issue identifier, required
-  --input <file>      Issue JSON file (from multica issue get)
-  --output <file>     Write classification to file
+  --input <file>      Issue JSON file with title/description/labels
+  --output <file>     Write classification JSON to file
   --ai-model <model>  AI model: llama3 | gpt-4 | none (default: none)
   --ai-endpoint <url> AI endpoint URL (default: http://localhost:11434/api/generate)
   -h, --help          Show this help
@@ -18,7 +18,6 @@ HELP
 }
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-
 issue_id=""
 input_file=""
 output_file=""
@@ -27,22 +26,13 @@ ai_endpoint="http://localhost:11434/api/generate"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --issue)
-      issue_id="${2:-}"; shift 2 ;;
-    --input)
-      input_file="${2:-}"; shift 2 ;;
-    --output)
-      output_file="${2:-}"; shift 2 ;;
-    --ai-model)
-      ai_model="${2:-}"; shift 2 ;;
-    --ai-endpoint)
-      ai_endpoint="${2:-}"; shift 2 ;;
-    -h|--help)
-      show_help; exit 0 ;;
-    *)
-      echo "Unknown argument: $1" >&2
-      show_help
-      exit 2 ;;
+    --issue) issue_id="${2:-}"; shift 2 ;;
+    --input) input_file="${2:-}"; shift 2 ;;
+    --output) output_file="${2:-}"; shift 2 ;;
+    --ai-model) ai_model="${2:-}"; shift 2 ;;
+    --ai-endpoint) ai_endpoint="${2:-}"; shift 2 ;;
+    -h|--help) show_help; exit 0 ;;
+    *) echo "Unknown argument: $1" >&2; show_help; exit 2 ;;
   esac
 done
 
@@ -52,151 +42,109 @@ if [[ -z "$issue_id" ]]; then
   exit 2
 fi
 
-issue_title=""
-issue_description=""
-issue_labels=""
+json_report="$(python3 - "$issue_id" "$input_file" "$ai_model" <<'PY'
+import datetime as dt
+import json
+import re
+import sys
+from pathlib import Path
 
-if [[ -n "$input_file" && -f "$input_file" ]]; then
-  issue_title=$(python3 -c "import json,sys; d=json.load(open('$input_file')); print(d.get('title',''))")
-  issue_description=$(python3 -c "import json,sys; d=json.load(open('$input_file')); print(d.get('description',''))")
-  issue_labels=$(python3 -c "import json,sys; d=json.load(open('$input_file')); print(','.join([l['name'] for l in d.get('labels',[])]))")
-else
-  echo "Warning: no --input file, will use heuristics only" >&2
-  issue_title="$issue_id"
-  issue_description="(no description)"
-  issue_labels=""
-fi
+issue_id, input_file, ai_model = sys.argv[1:]
+source = {"title": issue_id, "description": "", "labels": []}
+if input_file and Path(input_file).is_file():
+    raw = json.loads(Path(input_file).read_text(encoding="utf-8"))
+    labels = []
+    for item in raw.get("labels") or []:
+        labels.append(str(item.get("name") or item.get("label") or item.get("title") if isinstance(item, dict) else item))
+    source = {
+        "title": str(raw.get("title") or issue_id),
+        "description": str(raw.get("description") or raw.get("content") or ""),
+        "labels": labels,
+    }
+text = " ".join([source["title"], source["description"], " ".join(source["labels"])]).lower()
 
-classify_heuristic() {
-  local title="$1"
-  local description="$2"
-  local labels="$3"
-  
-  local task_type="unknown"
-  local confidence="0.3"
-  local reasoning="Heuristic classification based on keywords"
-  local risk_level="low"
-  local requires_clarification="false"
-  local complexity="medium"
-  
-  # Bug fix
-  if echo "$title $description" | grep -iqE "bug|错误|异常|报错|fix"; then
-    task_type="bug_fix"
-    confidence="0.7"
-    reasoning="Contains bug-related keywords"
-    risk_level="medium"
-  # Feature
-  elif echo "$title $description" | grep -iqE "feature|功能|新增|add"; then
-    task_type="feature"
-    confidence="0.7"
-    reasoning="Contains feature-related keywords"
-    risk_level="medium"
-    complexity="high"
-  # Documentation
-  elif echo "$title $description" | grep -iqE "doc|文档|说明|readme"; then
-    task_type="documentation"
-    confidence="0.8"
-    reasoning="Contains documentation keywords"
-    risk_level="low"
-    complexity="low"
-  # Refactor
-  elif echo "$title $description" | grep -iqE "refactor|重构|优化|cleanup"; then
-    task_type="refactor"
-    confidence="0.7"
-    reasoning="Contains refactor keywords"
-    risk_level="medium"
-    complexity="medium"
-  # Infrastructure
-  elif echo "$title $description" | grep -iqE "infra|infrastructure|基础设施|工具|tooling"; then
-    task_type="infrastructure"
-    confidence="0.7"
-    reasoning="Contains infrastructure keywords"
-    risk_level="low"
-  fi
-  
-  # Risk level from labels
-  if echo "$labels" | grep -iq "高风险\|high-risk"; then
-    risk_level="high"
-  elif echo "$labels" | grep -iq "低风险\|low-risk"; then
-    risk_level="low"
-  fi
-  
-  cat <<JSON
-{
-  "issue": "$issue_id",
-  "task_type": "$task_type",
-  "confidence": $confidence,
-  "reasoning": "$reasoning",
-  "risk_level": "$risk_level",
-  "requires_clarification": $requires_clarification,
-  "estimated_complexity": "$complexity",
-  "classification_method": "heuristic",
-  "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+rules = []
+def hit(name, pattern):
+    matched = re.search(pattern, text, re.I) is not None
+    if matched:
+        rules.append(name)
+    return matched
+
+remote = hit("remote_side_effect", r"feishu|飞书|multica|写回|comment|status|metadata|git remote|push|deploy|部署|安装|install|codex config")
+writeback = hit("writeback", r"写回|comment|status|metadata|feishu|飞书|multica")
+script = hit("local_script", r"script|脚本|toolchain|preflight|evidence|verify|校准|门禁|司南|loop")
+doc = hit("documentation", r"doc|文档|报告|分享|模板|demo|演示|复盘|方案")
+bug = hit("bug", r"bug|fix|修复|失败|报错|error|exception")
+feature = hit("feature", r"feature|需求|接口|新增|实现|能力|automation|自动")
+ambiguous = hit("ambiguous", r"^\s*(执行|继续|推进|走|做|推|\?+|司南健身)\s*$") or len(text.strip()) < 8
+
+if writeback:
+    task_type = "writeback"
+elif doc and not any(marker in text for marker in ["verify", "toolchain", "preflight", "evidence", "校准", "门禁"]):
+    task_type = "documentation"
+elif script:
+    task_type = "local_script_patch"
+elif doc:
+    task_type = "documentation"
+elif bug:
+    task_type = "bug_fix"
+elif feature:
+    task_type = "feature"
+else:
+    task_type = "unknown"
+
+if remote:
+    risk = "high"
+elif ambiguous:
+    risk = "medium"
+elif task_type in {"local_script_patch", "feature"}:
+    risk = "medium"
+else:
+    risk = "low"
+
+if ambiguous:
+    tier = "L0"
+elif remote:
+    tier = "L3"
+elif task_type in {"local_script_patch", "feature"}:
+    tier = "L2"
+elif task_type == "documentation":
+    tier = "L1"
+else:
+    tier = "L1"
+
+needs_clarification = ambiguous or task_type == "unknown"
+confidence = 0.85 if rules else 0.35
+if needs_clarification:
+    confidence = min(confidence, 0.55)
+
+report = {
+    "schema_version": 1,
+    "issue": issue_id,
+    "task_type": task_type,
+    "risk": risk,
+    "risk_level": risk,
+    "tier": tier,
+    "needs_clarification": needs_clarification,
+    "requires_clarification": needs_clarification,
+    "estimated_complexity": "high" if tier == "L3" else ("medium" if tier == "L2" else "low"),
+    "confidence": confidence,
+    "reasoning": "matched rules: " + (", ".join(rules) if rules else "none"),
+    "classification_method": "heuristic" if ai_model == "none" else f"heuristic_fallback:{ai_model}",
+    "automation_boundary": {
+        "auto_execute": False,
+        "auto_writeback_decision": False,
+        "auto_reviewer": False,
+    },
+    "timestamp": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
 }
-JSON
-}
-
-classify_with_ai() {
-  local model="$1"
-  local endpoint="$2"
-  local title="$3"
-  local description="$4"
-  
-  local prompt="Classify this task:
-
-Title: $title
-Description: $description
-
-Respond in JSON:
-{
-  \"task_type\": \"bug_fix|feature|documentation|refactor|infrastructure|test\",
-  \"confidence\": 0.0-1.0,
-  \"reasoning\": \"brief explanation\",
-  \"risk_level\": \"low|medium|high\",
-  \"requires_clarification\": true|false,
-  \"estimated_complexity\": \"low|medium|high\"
-}"
-  
-  if [[ "$model" == "llama3" ]]; then
-    # Local Ollama API
-    response=$(curl -s "$endpoint" -d "{\"model\":\"$model\",\"prompt\":$(echo "$prompt" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')}" 2>/dev/null || echo '{"response":"{}"}')
-    echo "$response" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('response','{}'))"
-  elif [[ "$model" == "gpt-4" ]]; then
-    # OpenAI API (requires OPENAI_API_KEY)
-    if [[ -z "${OPENAI_API_KEY:-}" ]]; then
-      echo "{\"error\":\"OPENAI_API_KEY not set\"}" >&2
-      echo "{}"
-      return 1
-    fi
-    curl -s https://api.openai.com/v1/chat/completions \
-      -H "Authorization: Bearer $OPENAI_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d "{\"model\":\"gpt-4\",\"messages\":[{\"role\":\"user\",\"content\":$(echo "$prompt" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')}]}" \
-    | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('choices',[{}])[0].get('message',{}).get('content','{}'))" 2>/dev/null || echo "{}"
-  else
-    echo "{}" >&2
-    return 1
-  fi
-}
-
-if [[ "$ai_model" == "none" ]]; then
-  result=$(classify_heuristic "$issue_title" "$issue_description" "$issue_labels")
-else
-  ai_result=$(classify_with_ai "$ai_model" "$ai_endpoint" "$issue_title" "$issue_description" 2>/dev/null || echo "{}")
-  
-  if echo "$ai_result" | python3 -c "import json,sys; json.load(sys.stdin)" >/dev/null 2>&1; then
-    # AI result valid
-    result=$(echo "$ai_result" | python3 -c "import json,sys; d=json.load(sys.stdin); d['issue']='$issue_id'; d['classification_method']='ai:$ai_model'; d['timestamp']='$(date -u +%Y-%m-%dT%H:%M:%SZ)'; print(json.dumps(d,indent=2))")
-  else
-    # AI failed, fallback to heuristic
-    echo "Warning: AI classification failed, using heuristic" >&2
-    result=$(classify_heuristic "$issue_title" "$issue_description" "$issue_labels")
-  fi
-fi
+print(json.dumps(report, ensure_ascii=False, indent=2))
+PY
+)"
 
 if [[ -n "$output_file" ]]; then
-  echo "$result" > "$output_file"
+  mkdir -p "$(dirname "$output_file")"
+  printf '%s\n' "$json_report" > "$output_file"
   echo "classification: $output_file"
 fi
-
-echo "$result"
+printf '%s\n' "$json_report"

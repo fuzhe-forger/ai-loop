@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "name": "intent-ambiguity-policy",
+  "description": "Local policy for detecting ambiguous or typo-prone user task keywords before execution.",
+  "result_policy": {
+    "block_when": "requires_clarification=true",
+    "side_effect_policy": "local-only; ask user before execution when blocked"
+  },
+  "term_pairs": [
+    {
+      "id": "sinan-jianshe-jianshen",
+      "canonical": "司南建设",
+      "ambiguous": "司南健身",
+      "risk": "high",
+      "clarification_question": "你这里的「司南健身」是指继续「司南建设」，还是要做一个新的系统健康检查/体检能力？"
+    }
+  ],
+  "heuristics": {
+    "short_task_max_chars": 30,
+    "ask_when_ambiguous_term_present": true,
+    "ask_when_multiple_close_terms_present": true
+  }
+}

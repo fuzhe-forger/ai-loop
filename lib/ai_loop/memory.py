@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import json
+import fcntl
 from pathlib import Path
 from typing import Any
 
-from .artifacts import now_iso, read_json
+from .artifacts import now_iso, read_json, write_text
 
 
 def record_run_memory(run_dir: Path) -> None:
@@ -45,15 +46,18 @@ def build_record(run_dir: Path, run_data: dict[str, Any]) -> dict[str, Any]:
 
 def upsert_jsonl_record(index_path: Path, record: dict[str, Any]) -> None:
     index_path.parent.mkdir(parents=True, exist_ok=True)
-    records = read_index(index_path)
-    run_id = record.get("run_id")
-    records = [item for item in records if item.get("run_id") != run_id]
-    records.append(record)
-    records.sort(key=lambda item: str(item.get("updated_at") or ""))
-    index_path.write_text(
-        "".join(json.dumps(item, ensure_ascii=False, sort_keys=True) + "\n" for item in records),
-        encoding="utf-8",
-    )
+    lock_path = index_path.with_suffix(index_path.suffix + ".lock")
+    with lock_path.open("w", encoding="utf-8") as lock_file:
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+        try:
+            records = read_index(index_path)
+            run_id = record.get("run_id")
+            records = [item for item in records if item.get("run_id") != run_id]
+            records.append(record)
+            records.sort(key=lambda item: str(item.get("updated_at") or ""))
+            write_text(index_path, "".join(json.dumps(item, ensure_ascii=False, sort_keys=True) + "\n" for item in records))
+        finally:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
 
 
 def read_index(index_path: Path) -> list[dict[str, Any]]:
@@ -98,7 +102,7 @@ def write_state_markdown(artifacts_root: Path, limit: int = 20) -> None:
     else:
         lines.append("- No runs recorded yet.")
 
-    (artifacts_root / "LOOP_STATE.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    write_text(artifacts_root / "LOOP_STATE.md", "\n".join(lines) + "\n")
 
 
 def format_record_bullets(records: list[dict[str, Any]]) -> list[str]:

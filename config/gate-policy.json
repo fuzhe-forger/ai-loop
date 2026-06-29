@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "default_task_type": "unknown",
+  "gates": ["requirement", "design", "clarification", "deliverable"],
+  "task_types": {
+    "bug_fix": {
+      "description": "Bug fixes or incident follow-up with concrete acceptance criteria.",
+      "required_gates": ["requirement", "design", "deliverable"],
+      "optional_gates": ["clarification"],
+      "minimum_scores": {
+        "requirement": 80,
+        "design": 80,
+        "clarification": 80,
+        "deliverable": 80
+      }
+    },
+    "feature": {
+      "description": "New behavior, product capability, or user-facing feature work.",
+      "required_gates": ["requirement", "design", "deliverable"],
+      "optional_gates": ["clarification"],
+      "minimum_scores": {
+        "requirement": 90,
+        "design": 85,
+        "clarification": 90,
+        "deliverable": 85
+      }
+    },
+    "documentation": {
+      "description": "Documentation-only updates, reports, playbooks, or knowledge-base work.",
+      "required_gates": ["requirement", "deliverable"],
+      "optional_gates": ["design", "clarification"],
+      "minimum_scores": {
+        "requirement": 75,
+        "design": 75,
+        "clarification": 80,
+        "deliverable": 85
+      }
+    },
+    "refactor": {
+      "description": "Internal code restructuring without intended behavior change.",
+      "required_gates": ["requirement", "design", "deliverable"],
+      "optional_gates": ["clarification"],
+      "minimum_scores": {
+        "requirement": 85,
+        "design": 90,
+        "clarification": 85,
+        "deliverable": 85
+      }
+    },
+    "infrastructure": {
+      "description": "Tooling, CI, workflow, orchestration, or platform-support changes.",
+      "required_gates": ["requirement", "design", "deliverable"],
+      "optional_gates": ["clarification"],
+      "minimum_scores": {
+        "requirement": 85,
+        "design": 85,
+        "clarification": 85,
+        "deliverable": 85
+      }
+    },
+    "test": {
+      "description": "Test-only additions, regression coverage, or verification harness work.",
+      "required_gates": ["requirement", "deliverable"],
+      "optional_gates": ["design", "clarification"],
+      "minimum_scores": {
+        "requirement": 80,
+        "design": 75,
+        "clarification": 80,
+        "deliverable": 85
+      }
+    },
+    "unknown": {
+      "description": "Fallback for low-confidence or unclassified tasks; intentionally conservative.",
+      "required_gates": ["requirement", "design", "deliverable"],
+      "optional_gates": ["clarification"],
+      "minimum_scores": {
+        "requirement": 90,
+        "design": 90,
+        "clarification": 90,
+        "deliverable": 90
+      }
+    }
+  },
+  "clarification_policy": {
+    "required_when_present": true,
+    "required_when_requirement_failed": true,
+    "minimum_score_default": 80
+  }
+}

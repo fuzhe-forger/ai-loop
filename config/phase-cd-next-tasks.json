@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "scope": "Phase C/D next slice: organization policy report and structured memory metadata",
+  "generated_from": "runs/<run-id>/phase-cd-execution-report.md#remaining-work",
+  "estimation_model": {
+    "rule": "task_quantity_first_calibration_second",
+    "raw_estimate_source": "explicit task workload",
+    "calibration_formula": "if bucket has >=3 trusted samples, calibrated=round(raw*0.8 + bucket_recommended*0.2); otherwise use raw estimate",
+    "confidence_rule": "high when bucket has >=10 samples, medium when 3-9, low when <3"
+  },
+  "tasks": [
+    {
+      "id": "CDN-001",
+      "metric": "Phase C 组织层",
+      "phase": "Phase C",
+      "title": "定义 organization policy schema",
+      "task_type": "documentation",
+      "raw_estimate_minutes": 4,
+      "priority": "P0",
+      "acceptance": "配置文件描述 routing、policy、side_effect、review 的统一输出字段。",
+      "verification": "python3 -m json.tool config/organization-policy.json passes",
+      "output_paths": ["config/organization-policy.json"],
+      "side_effects": "local config only"
+    },
+    {
+      "id": "CDN-002",
+      "metric": "Phase C 组织层",
+      "phase": "Phase C",
+      "title": "实现 organization-policy-report 脚本",
+      "task_type": "local_script_patch",
+      "raw_estimate_minutes": 8,
+      "priority": "P0",
+      "acceptance": "脚本聚合 route、gate policy、approval boundary、review evidence，输出 md/json。",
+      "verification": "scripts/organization-policy-report.sh --issue FUZ-554 --run-id <run-id> outputs PASSED report",
+      "output_paths": ["scripts/organization-policy-report.sh"],
+      "side_effects": "local script only"
+    },
+    {
+      "id": "CDN-003",
+      "metric": "Phase C 组织层",
+      "phase": "Phase C",
+      "title": "生成当前 run 的组织策略报告",
+      "task_type": "local_script_patch",
+      "raw_estimate_minutes": 4,
+      "priority": "P1",
+      "acceptance": "run 目录包含 organization-policy-report.md/json。",
+      "verification": "organization-policy-report JSON result is PASSED",
+      "output_paths": ["runs/<run-id>/organization-policy-report.md", "runs/<run-id>/organization-policy-report.json"],
+      "side_effects": "local run artifacts only"
+    },
+    {
+      "id": "CDN-004",
+      "metric": "Phase D 项目记忆",
+      "phase": "Phase D",
+      "title": "增强 extract-experience 结构化 metadata 输出",
+      "task_type": "local_script_patch",
+      "raw_estimate_minutes": 7,
+      "priority": "P0",
+      "acceptance": "extract-experience 支持 --json-output，输出 issue/run/status/tags/source_artifacts/review_state。",
+      "verification": "extract-experience --json-output emits schema_version=1 and review_state=draft",
+      "output_paths": ["scripts/extract-experience.sh"],
+      "side_effects": "local script only"
+    },
+    {
+      "id": "CDN-005",
+      "metric": "Phase D 项目记忆",
+      "phase": "Phase D",
+      "title": "扩展 memory policy 生命周期规则",
+      "task_type": "local_script_patch",
+      "raw_estimate_minutes": 4,
+      "priority": "P1",
+      "acceptance": "project-memory-policy 定义 review_state 生命周期，memory-quality-check 校验 cases 的 review_state。",
+      "verification": "memory-quality-check passes with review_state validation",
+      "output_paths": ["config/project-memory-policy.json", "scripts/memory-quality-check.sh"],
+      "side_effects": "local config/script only"
+    },
+    {
+      "id": "CDN-006",
+      "metric": "Phase C/D 验收",
+      "phase": "Phase C/D",
+      "title": "生成 C/D 下一轮执行报告并接入证据",
+      "task_type": "documentation",
+      "raw_estimate_minutes": 5,
+      "priority": "P0",
+      "acceptance": "报告列出所有 CDN 任务、耗时、验证和下一步。",
+      "verification": "phase-cd-next-execution-report.md present and evidence summary includes new artifacts",
+      "output_paths": ["runs/<run-id>/phase-cd-next-task-board.md", "runs/<run-id>/phase-cd-next-task-board.json", "runs/<run-id>/phase-cd-next-execution-report.md"],
+      "side_effects": "local run artifacts only"
+    }
+  ]
+}
