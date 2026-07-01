@@ -9,6 +9,7 @@ from pathlib import Path
 from .artifacts import read_json
 from .config import ConfigError, load_config
 from .discover import DiscoverError, DiscoverRequest, discover
+from .graph_context import GraphContextRequest, generate_graph_context
 from .init_project import InitError, init_repo
 from .memory import read_index
 from .planner import PlanError, PlanRequest, plan
@@ -29,6 +30,8 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--dry-run", action="store_true", help="Generate orchestration artifacts without Agent or verify")
     run_parser.add_argument("--run-id", help="Explicit run id")
     run_parser.add_argument("--base-ref", help="Base ref for future workspace creation")
+    run_parser.add_argument("--use-graph-context", action="store_true", help="Generate CodeGraph context before prompting the agent")
+    run_parser.add_argument("--build-graph", action="store_true", help="Initialize CodeGraph if no local index exists")
 
     plan_parser = subcommands.add_parser("plan", help="Plan an ambiguous task without modifying files")
     plan_parser.add_argument("--repo", required=True, help="Repository path")
@@ -45,6 +48,13 @@ def build_parser() -> argparse.ArgumentParser:
     status_parser.add_argument("run_id", nargs="?", help="Run id")
     status_parser.add_argument("--latest", action="store_true", help="Show the latest run from local memory")
     status_parser.add_argument("--repo", default=".", help="Repository path, defaults to current directory")
+
+    graph_parser = subcommands.add_parser("graph-context", help="Generate optional CodeGraph context for a task")
+    graph_parser.add_argument("--repo", required=True, help="Repository path")
+    graph_parser.add_argument("--task", required=True, help="Task markdown file, relative to repo or absolute")
+    graph_parser.add_argument("--output", help="Output markdown path, defaults to runs/graph-context.md")
+    graph_parser.add_argument("--base-ref", default="HEAD", help="Base ref for changed-file detection")
+    graph_parser.add_argument("--build-graph", action="store_true", help="Initialize CodeGraph if no local index exists")
 
     return parser
 
@@ -73,6 +83,8 @@ def cmd_run(args: argparse.Namespace) -> int:
         dry_run=args.dry_run,
         run_id=args.run_id,
         base_ref=args.base_ref,
+        use_graph_context=args.use_graph_context,
+        build_graph=args.build_graph,
     )
     try:
         run_dir = run(request)
@@ -85,6 +97,30 @@ def cmd_run(args: argparse.Namespace) -> int:
     print(f"status: {data['status']}")
     print(f"summary: {run_dir / 'summary.md'}")
     return int(data.get("exit_code") or 0)
+
+
+def cmd_graph_context(args: argparse.Namespace) -> int:
+    repo = Path(args.repo).resolve()
+    task = Path(args.task)
+    if not task.is_absolute():
+        task = repo / task
+    output = Path(args.output) if args.output else repo / "runs" / "graph-context.md"
+    if not output.is_absolute():
+        output = repo / output
+
+    result = generate_graph_context(
+        GraphContextRequest(
+            repo=repo,
+            task=task,
+            output=output,
+            base_ref=args.base_ref,
+            build=args.build_graph,
+        )
+    )
+    print(f"graph_context: {result.report_path}")
+    print(f"context_pack: {result.report_path.with_name('context-pack.md')}")
+    print(f"status: {result.status}")
+    return 0
 
 
 def cmd_discover(args: argparse.Namespace) -> int:
@@ -187,6 +223,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_discover(args)
     if args.command == "status":
         return cmd_status(args)
+    if args.command == "graph-context":
+        return cmd_graph_context(args)
 
     parser.print_help()
     return 2

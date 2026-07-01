@@ -14,6 +14,7 @@ from .agent import AgentError, AgentRequest, run_agent
 from .artifacts import now_iso, update_run, write_json, write_text
 from .config import ConfigError, config_text, load_config
 from .diff import collect_diff
+from .graph_context import GraphContextRequest, context_pack_path, generate_graph_context
 from .ids import validate_id
 from .memory import record_run_memory
 from .prompt import first_prompt, retry_prompt
@@ -33,6 +34,8 @@ class RunRequest:
     dry_run: bool = False
     run_id: str | None = None
     base_ref: str | None = None
+    use_graph_context: bool = False
+    build_graph: bool = False
 
 
 def slug_from_task(task: Path) -> str:
@@ -187,7 +190,37 @@ def run_locked(
         )
         update_run(run_dir, status="WORKSPACE_READY", workspace=str(workspace.path))
 
-    write_text(run_dir / "prompt.1.md", first_prompt(task_content, str(workspace_path), config))
+    graph_context_path: Path | None = None
+    graph_artifact_paths: list[str] = []
+    if request.use_graph_context:
+        graph_context_path = run_dir / "graph-context.md"
+        graph_result = generate_graph_context(
+            GraphContextRequest(
+                repo=repo,
+                task=task,
+                output=graph_context_path,
+                base_ref=base_ref,
+                build=request.build_graph,
+            )
+        )
+        graph_artifact_paths = [graph_context_path.name, context_pack_path(graph_context_path).name]
+        update_run(
+            run_dir,
+            graph_context_status=graph_result.status,
+            graph_context_path=graph_context_path.name,
+            context_pack_path=context_pack_path(graph_context_path).name,
+            context_artifact_paths=graph_artifact_paths,
+        )
+
+    write_text(
+        run_dir / "prompt.1.md",
+        first_prompt(
+            task_content,
+            str(workspace_path),
+            config,
+            graph_context_path.name if graph_context_path is not None else None,
+        ),
+    )
     update_run(run_dir, status="PROMPT_READY", iteration=1)
 
     if request.dry_run:
@@ -201,6 +234,7 @@ def run_locked(
             dry_run=True,
             result="dry-run completed: config, task, workspace record, prompt, and summary artifacts were generated.",
             patch_paths=[],
+            extra_artifacts=graph_artifact_paths,
         )
         write_text(run_dir / "summary.md", summary)
         update_run(run_dir, status="PASSED", error_code=None, exit_code=0, finished_at=now_iso())
@@ -234,6 +268,7 @@ def run_locked(
                 dry_run=False,
                 result=str(exc),
                 patch_paths=patch_paths,
+                extra_artifacts=graph_artifact_paths,
             )
             return run_dir
 
@@ -255,6 +290,7 @@ def run_locked(
                 dry_run=False,
                 result=f"safety failed: {exc}",
                 patch_paths=patch_paths,
+                extra_artifacts=graph_artifact_paths,
             )
             return run_dir
 
@@ -290,6 +326,7 @@ def run_locked(
             dry_run=False,
             result="agent changes passed safety checks and verification commands.",
             patch_paths=patch_paths,
+            extra_artifacts=graph_artifact_paths,
         )
         write_text(run_dir / "summary.md", summary)
         update_run(run_dir, status="PASSED", error_code=None, exit_code=0, finished_at=now_iso(), patch_paths=patch_paths)
@@ -306,6 +343,7 @@ def run_locked(
         dry_run=False,
         result=f"verification did not pass within {max_iterations} iterations: {last_verify_error}",
         patch_paths=patch_paths,
+        extra_artifacts=graph_artifact_paths,
     )
     return run_dir
 
@@ -321,6 +359,7 @@ def fail_run(
     dry_run: bool,
     result: str,
     patch_paths: list[str],
+    extra_artifacts: list[str] | None = None,
 ) -> None:
     summary = build_summary(
         run_id=run_id,
@@ -332,6 +371,7 @@ def fail_run(
         dry_run=dry_run,
         result=result,
         patch_paths=patch_paths,
+        extra_artifacts=extra_artifacts,
     )
     write_text(run_dir / "summary.md", summary)
     update_run(
@@ -356,6 +396,7 @@ def build_summary(
     dry_run: bool,
     result: str,
     patch_paths: list[str],
+    extra_artifacts: list[str] | None = None,
 ) -> str:
     artifacts = [
         "run.json",
@@ -365,6 +406,7 @@ def build_summary(
         "prompt.1.md",
         "summary.md",
     ]
+    artifacts.extend(extra_artifacts or [])
     artifacts.extend(patch_paths)
     artifact_lines = "\n".join(f"- `{artifact}`" for artifact in artifacts)
     return f"""# AI Loop Run Summary

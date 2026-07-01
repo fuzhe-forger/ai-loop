@@ -85,6 +85,36 @@ for artifact in summary.md stage-report.md multica-comment.md review-packet.md s
     evidence_lines+="  - ${run_dir}/${artifact}"$'\n'
   fi
 done
+if [[ -s "$run_dir/run.json" ]]; then
+  while IFS= read -r artifact; do
+    [[ -z "$artifact" ]] && continue
+    if [[ -s "$run_dir/$artifact" ]]; then
+      evidence_lines+="  - ${run_dir}/${artifact}"$'\n'
+    fi
+  done < <(python3 - "$run_dir/run.json" <<'PY'
+import json
+import sys
+from pathlib import PurePosixPath
+
+try:
+    data = json.load(open(sys.argv[1], encoding="utf-8"))
+except Exception:
+    raise SystemExit(0)
+
+seen: set[str] = set()
+for artifact in data.get("context_artifact_paths") or []:
+    if not isinstance(artifact, str) or not artifact.strip():
+        continue
+    path = PurePosixPath(artifact)
+    if path.is_absolute() or ".." in path.parts:
+        continue
+    normalized = str(path)
+    if normalized not in seen:
+        seen.add(normalized)
+        print(normalized)
+PY
+  )
+fi
 if [[ -z "$evidence_lines" ]]; then
   evidence_lines="  - (no evidence found under ${run_dir})"$'\n'
 fi

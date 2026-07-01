@@ -478,3 +478,41 @@ codex exec --help
 ```
 
 然后更新 `.ai-loop.yml` 的 `agent.args`。
+
+## Karpathy/Greykey Coding Discipline
+
+AI Loop coding tasks use four local checks before implementation:
+
+1. **Assumptions** — surface uncertainty instead of silently guessing.
+2. **Smallest safe change** — avoid speculative features and one-off abstractions.
+3. **Surgical scope** — every changed line should trace to the task goal.
+4. **Verification** — name the command or artifact that proves success.
+
+Use the local gate before running implementation tasks:
+
+```bash
+./scripts/karpathy-gate.sh --input tasks/<task>.md --output runs/<run-id>/karpathy-gate.md
+```
+
+When a repository has a CodeGraph index, generate context before prompting the agent:
+
+```bash
+./bin/ai-loop graph-context --repo . --task tasks/<task>.md --output runs/<run-id>/graph-context.md
+./bin/ai-loop run --repo . --task tasks/<task>.md --use-graph-context --dry-run
+```
+
+`--use-graph-context` is optional and local-only. If `codegraph` is unavailable or the index is missing, AI Loop writes a fallback report and continues with normal execution.
+
+The generated report is Sinan's local understanding layer, not a separate knowledge-graph product. It creates two run-local artifacts:
+
+- `graph-context.md` — CodeGraph status, tracked changed files, affected context, and usage rules.
+- `context-pack.md` — the same local understanding contract in a stable filename for handoff and evidence references.
+
+Use the context pack across Loop stages:
+
+1. **Plan** — identify the first files or modules to inspect.
+2. **Execute** — keep edits within the changed or affected surface unless evidence expands scope.
+3. **Verify** — choose focused validation from the affected surface before broader checks.
+4. **Evidence/Handoff** — reference the run-local context pack so later windows do not reread the whole repo.
+
+When `scripts/loop-handoff.sh` sees `context_artifact_paths` in `runs/<run-id>/run.json`, it automatically includes existing context artifacts in the handoff Evidence section.
