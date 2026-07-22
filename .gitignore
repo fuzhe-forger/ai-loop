@@ -6,3 +6,10 @@ __pycache__/
 *.pyc
 state/operations/obsidian-sync-*.md
 state/operations/obsidian-sync.latest.md
+
+# 内部敏感内容,不提交
+tasks/
+memory/templates/mit-technical-design-v1.15.md
+*.bak
+*.bak.*
+state/operations/
